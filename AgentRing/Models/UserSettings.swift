@@ -103,6 +103,10 @@ enum LimitType: String, CaseIterable, Codable {
     case codexExtraUsage = "codex_extra_usage"
     case cursorIncluded = "cursor_included"
     case cursorOnDemand = "cursor_ondemand"
+    case glmPrimary = "glm_primary"
+    case glmSecondary = "glm_secondary"
+    case kimiPrimary = "kimi_primary"
+    case kimiSecondary = "kimi_secondary"
     case antigravityPrimary = "antigravity_primary"
     case antigravitySecondary = "antigravity_secondary"
     case antigravityThirdPartyPrimary = "antigravity_third_party_primary"
@@ -112,13 +116,15 @@ enum LimitType: String, CaseIterable, Codable {
         switch self {
         case .codexPrimary, .codexSecondary, .codexExtraUsage: return .codex
         case .cursorIncluded, .cursorOnDemand: return .cursor
+        case .glmPrimary, .glmSecondary: return .glm
+        case .kimiPrimary, .kimiSecondary: return .kimi
         case .antigravityPrimary, .antigravitySecondary: return .antigravity
         case .antigravityThirdPartyPrimary, .antigravityThirdPartySecondary: return .antigravityThird
         }
     }
 
     var isCircular: Bool {
-        self == .codexPrimary || self == .codexSecondary || self == .cursorIncluded || self == .cursorOnDemand || self == .antigravityPrimary || self == .antigravitySecondary || self == .antigravityThirdPartyPrimary || self == .antigravityThirdPartySecondary
+        self == .codexPrimary || self == .codexSecondary || self == .cursorIncluded || self == .cursorOnDemand || self == .glmPrimary || self == .glmSecondary || self == .kimiPrimary || self == .kimiSecondary || self == .antigravityPrimary || self == .antigravitySecondary || self == .antigravityThirdPartyPrimary || self == .antigravityThirdPartySecondary
     }
 
     var isRectangular: Bool { false }
@@ -128,7 +134,7 @@ enum LimitType: String, CaseIterable, Codable {
     }
 
     var usesDashedStyle: Bool {
-        self == .codexSecondary || self == .antigravitySecondary || self == .antigravityThirdPartySecondary
+        self == .codexSecondary || self == .glmSecondary || self == .kimiSecondary || self == .antigravitySecondary || self == .antigravityThirdPartySecondary
     }
 
     var displayName: String {
@@ -138,6 +144,10 @@ enum LimitType: String, CaseIterable, Codable {
         case .codexExtraUsage: return L.LimitTypes.codexExtraUsage
         case .cursorIncluded: return L.LimitTypes.cursorIncluded
         case .cursorOnDemand: return L.LimitTypes.cursorOnDemand
+        case .glmPrimary: return L.LimitTypes.glmPrimary
+        case .glmSecondary: return L.LimitTypes.glmSecondary
+        case .kimiPrimary: return L.LimitTypes.kimiPrimary
+        case .kimiSecondary: return L.LimitTypes.kimiSecondary
         case .antigravityPrimary: return L.LimitTypes.antigravityPrimary
         case .antigravitySecondary: return L.LimitTypes.antigravitySecondary
         case .antigravityThirdPartyPrimary: return L.LimitTypes.antigravityThirdPartyPrimary
@@ -153,6 +163,10 @@ enum LimitType: String, CaseIterable, Codable {
         case .codexExtraUsage: return L.DetailRow.extraUsage
         case .cursorIncluded: return L.DetailRow.cursorIncluded
         case .cursorOnDemand: return L.DetailRow.cursorOnDemand
+        case .glmPrimary: return L.DetailRow.fiveHour
+        case .glmSecondary: return L.DetailRow.sevenDay
+        case .kimiPrimary: return L.DetailRow.fiveHour
+        case .kimiSecondary: return L.DetailRow.sevenDay
         case .antigravityPrimary: return L.DetailRow.antigravityGeminiPrimary
         case .antigravitySecondary: return L.DetailRow.antigravityGeminiSecondary
         case .antigravityThirdPartyPrimary: return L.DetailRow.antigravityThirdPartyPrimary
@@ -278,6 +292,36 @@ final class UserSettings: ObservableObject {
         }
     }
 
+    @Published var glmAccounts: [Account] = [] {
+        didSet { saveGlmAccounts() }
+    }
+
+    @Published var currentGlmAccountId: UUID? {
+        didSet {
+            let key = Self.currentGlmAccountIdKey
+            if let id = currentGlmAccountId {
+                defaults.set(id.uuidString, forKey: key)
+            } else {
+                defaults.removeObject(forKey: key)
+            }
+        }
+    }
+
+    @Published var kimiAccounts: [Account] = [] {
+        didSet { saveKimiAccounts() }
+    }
+
+    @Published var currentKimiAccountId: UUID? {
+        didSet {
+            let key = Self.currentKimiAccountIdKey
+            if let id = currentKimiAccountId {
+                defaults.set(id.uuidString, forKey: key)
+            } else {
+                defaults.removeObject(forKey: key)
+            }
+        }
+    }
+
     var currentCodexAccount: Account? {
         guard let id = currentCodexAccountId else { return codexAccounts.first }
         return codexAccounts.first { $0.id == id } ?? codexAccounts.first
@@ -288,6 +332,16 @@ final class UserSettings: ObservableObject {
         return cursorAccounts.first { $0.id == id } ?? cursorAccounts.first
     }
 
+    var currentGlmAccount: Account? {
+        guard let id = currentGlmAccountId else { return glmAccounts.first }
+        return glmAccounts.first { $0.id == id } ?? glmAccounts.first
+    }
+
+    var currentKimiAccount: Account? {
+        guard let id = currentKimiAccountId else { return kimiAccounts.first }
+        return kimiAccounts.first { $0.id == id } ?? kimiAccounts.first
+    }
+
     var codexSessionToken: String {
         currentCodexAccount?.credentialToken ?? ""
     }
@@ -296,12 +350,28 @@ final class UserSettings: ObservableObject {
         currentCursorAccount?.credentialToken ?? ""
     }
 
+    var glmApiKey: String {
+        currentGlmAccount?.credentialToken ?? ""
+    }
+
+    var kimiApiKey: String {
+        currentKimiAccount?.credentialToken ?? ""
+    }
+
     var hasValidCodexCredentials: Bool {
         !codexSessionToken.isEmpty
     }
 
     var hasValidCursorCredentials: Bool {
         !cursorSessionToken.isEmpty
+    }
+
+    var hasValidGlmCredentials: Bool {
+        !glmApiKey.isEmpty
+    }
+
+    var hasValidKimiCredentials: Bool {
+        !kimiApiKey.isEmpty
     }
 
     /// Antigravity 是否纳入监控（用户开关；默认开启，真正能否拉取取决于系统凭证）
@@ -326,7 +396,7 @@ final class UserSettings: ObservableObject {
     }
 
     var hasAnyValidCredentials: Bool {
-        hasValidCodexCredentials || hasValidCursorCredentials || hasValidAntigravityCredentials
+        hasValidCodexCredentials || hasValidCursorCredentials || hasValidGlmCredentials || hasValidKimiCredentials || hasValidAntigravityCredentials
     }
 
     var hasValidCredentials: Bool {
@@ -342,6 +412,8 @@ final class UserSettings: ObservableObject {
         let activeCount = [
             hasValidCodexCredentials,
             hasValidCursorCredentials,
+            hasValidGlmCredentials,
+            hasValidKimiCredentials,
             hasValidAntigravityCredentials
         ].filter { $0 }.count
         return activeCount >= 2
@@ -609,6 +681,22 @@ final class UserSettings: ObservableObject {
         #endif
     }
 
+    private static var currentGlmAccountIdKey: String {
+        #if DEBUG
+        return "DEBUG_currentGlmAccountId"
+        #else
+        return "currentGlmAccountId"
+        #endif
+    }
+
+    private static var currentKimiAccountIdKey: String {
+        #if DEBUG
+        return "DEBUG_currentKimiAccountId"
+        #else
+        return "currentKimiAccountId"
+        #endif
+    }
+
     private init() {
         LegacyBundleMigration.runIfNeeded()
 
@@ -638,6 +726,32 @@ final class UserSettings: ObservableObject {
             currentCursorAccountId = id
         } else {
             currentCursorAccountId = loadedCursorAccounts.first?.id
+        }
+
+        let loadedGlmAccounts = (keychain.loadGlmAccounts() ?? []).map { account -> Account in
+            var copy = account
+            copy.provider = .glm
+            return copy
+        }
+        glmAccounts = loadedGlmAccounts
+        if let idString = defaults.string(forKey: Self.currentGlmAccountIdKey),
+           let id = UUID(uuidString: idString) {
+            currentGlmAccountId = id
+        } else {
+            currentGlmAccountId = loadedGlmAccounts.first?.id
+        }
+
+        let loadedKimiAccounts = (keychain.loadKimiAccounts() ?? []).map { account -> Account in
+            var copy = account
+            copy.provider = .kimi
+            return copy
+        }
+        kimiAccounts = loadedKimiAccounts
+        if let idString = defaults.string(forKey: Self.currentKimiAccountIdKey),
+           let id = UUID(uuidString: idString) {
+            currentKimiAccountId = id
+        } else {
+            currentKimiAccountId = loadedKimiAccounts.first?.id
         }
 
         iconDisplayMode = defaults.string(forKey: "iconDisplayMode").flatMap(IconDisplayMode.init(rawValue:)) ?? .percentageOnly
@@ -786,7 +900,9 @@ final class UserSettings: ObservableObject {
     func orderedActiveProviders(
         codexUsageData: CodexUsageData? = nil,
         cursorUsageData: CursorUsageData? = nil,
-        antigravityUsageData: AntigravityUsageData? = nil
+        antigravityUsageData: AntigravityUsageData? = nil,
+        glmUsageData: GlmUsageData? = nil,
+        kimiUsageData: KimiUsageData? = nil
     ) -> [ProviderType] {
         var active: Set<ProviderType> = []
         if hasValidCodexCredentials || codexUsageData != nil {
@@ -794,6 +910,12 @@ final class UserSettings: ObservableObject {
         }
         if hasValidCursorCredentials || cursorUsageData != nil {
             active.insert(.cursor)
+        }
+        if hasValidGlmCredentials || glmUsageData != nil {
+            active.insert(.glm)
+        }
+        if hasValidKimiCredentials || kimiUsageData != nil {
+            active.insert(.kimi)
         }
         if hasValidAntigravityCredentials || antigravityUsageData != nil {
             active.insert(.antigravity)
@@ -875,6 +997,20 @@ final class UserSettings: ObservableObject {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
             self.keychain.saveCursorAccounts(self.cursorAccounts)
+        }
+    }
+
+    private func saveGlmAccounts() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+            self.keychain.saveGlmAccounts(self.glmAccounts)
+        }
+    }
+
+    private func saveKimiAccounts() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+            self.keychain.saveKimiAccounts(self.kimiAccounts)
         }
     }
 
@@ -1005,6 +1141,120 @@ final class UserSettings: ObservableObject {
         cursorAccounts[index].alias = alias
     }
 
+    @discardableResult
+    func addGlmAccount(_ account: Account) -> Account {
+        let stableId = account.accountIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let existingIndex = glmAccounts.firstIndex { existing in
+            if !stableId.isEmpty {
+                return existing.accountIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == stableId
+                    || existing.credentialToken == account.credentialToken
+            }
+            return existing.credentialToken == account.credentialToken
+        }
+
+        if let index = existingIndex {
+            glmAccounts[index].credentialToken = account.credentialToken
+            glmAccounts[index].accountIdentifier = account.accountIdentifier
+            glmAccounts[index].accountName = account.accountName
+            glmAccounts[index].provider = .glm
+            if currentGlmAccountId == nil {
+                currentGlmAccountId = glmAccounts[index].id
+            }
+            postAccountChanged(provider: .glm)
+            return glmAccounts[index]
+        }
+
+        var storedAccount = account
+        storedAccount.provider = .glm
+        glmAccounts.append(storedAccount)
+        if glmAccounts.count == 1 {
+            currentGlmAccountId = storedAccount.id
+        }
+        ensureDefaultGlmDisplayTypesForCustomMode()
+        postAccountChanged(provider: .glm)
+        return storedAccount
+    }
+
+    func removeGlmAccount(_ account: Account) {
+        guard let index = glmAccounts.firstIndex(where: { $0.id == account.id }) else { return }
+        let wasCurrent = currentGlmAccountId == account.id
+        glmAccounts.remove(at: index)
+        NotificationManager.shared.resetNotificationStates(for: .glm, accountId: account.id)
+        if wasCurrent {
+            currentGlmAccountId = glmAccounts.first?.id
+            postAccountChanged(provider: .glm)
+        }
+    }
+
+    func switchToGlmAccount(_ account: Account) {
+        guard account.id != currentGlmAccountId else { return }
+        guard glmAccounts.contains(where: { $0.id == account.id }) else { return }
+        currentGlmAccountId = account.id
+        postAccountChanged(provider: .glm)
+    }
+
+    func updateGlmAccount(_ account: Account, alias: String?) {
+        guard let index = glmAccounts.firstIndex(where: { $0.id == account.id }) else { return }
+        glmAccounts[index].alias = alias
+    }
+
+    @discardableResult
+    func addKimiAccount(_ account: Account) -> Account {
+        let stableId = account.accountIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let existingIndex = kimiAccounts.firstIndex { existing in
+            if !stableId.isEmpty {
+                return existing.accountIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == stableId
+                    || existing.credentialToken == account.credentialToken
+            }
+            return existing.credentialToken == account.credentialToken
+        }
+
+        if let index = existingIndex {
+            kimiAccounts[index].credentialToken = account.credentialToken
+            kimiAccounts[index].accountIdentifier = account.accountIdentifier
+            kimiAccounts[index].accountName = account.accountName
+            kimiAccounts[index].provider = .kimi
+            if currentKimiAccountId == nil {
+                currentKimiAccountId = kimiAccounts[index].id
+            }
+            postAccountChanged(provider: .kimi)
+            return kimiAccounts[index]
+        }
+
+        var storedAccount = account
+        storedAccount.provider = .kimi
+        kimiAccounts.append(storedAccount)
+        if kimiAccounts.count == 1 {
+            currentKimiAccountId = storedAccount.id
+        }
+        ensureDefaultKimiDisplayTypesForCustomMode()
+        postAccountChanged(provider: .kimi)
+        return storedAccount
+    }
+
+    func removeKimiAccount(_ account: Account) {
+        guard let index = kimiAccounts.firstIndex(where: { $0.id == account.id }) else { return }
+        let wasCurrent = currentKimiAccountId == account.id
+        kimiAccounts.remove(at: index)
+        NotificationManager.shared.resetNotificationStates(for: .kimi, accountId: account.id)
+        if wasCurrent {
+            currentKimiAccountId = kimiAccounts.first?.id
+            postAccountChanged(provider: .kimi)
+        }
+    }
+
+    func switchToKimiAccount(_ account: Account) {
+        guard account.id != currentKimiAccountId else { return }
+        guard kimiAccounts.contains(where: { $0.id == account.id }) else { return }
+        currentKimiAccountId = account.id
+        postAccountChanged(provider: .kimi)
+    }
+
+    func updateKimiAccount(_ account: Account, alias: String?) {
+        guard let index = kimiAccounts.firstIndex(where: { $0.id == account.id }) else { return }
+        kimiAccounts[index].alias = alias
+    }
+
     private func postAccountChanged() {
         postAccountChanged(provider: .codex)
     }
@@ -1029,6 +1279,20 @@ final class UserSettings: ObservableObject {
         let cursorTypes: Set<LimitType> = [.cursorIncluded, .cursorOnDemand]
         guard customDisplayTypes.isDisjoint(with: cursorTypes) else { return }
         customDisplayTypes.insert(.cursorIncluded)
+    }
+
+    private func ensureDefaultGlmDisplayTypesForCustomMode() {
+        guard displayMode == .custom else { return }
+        let glmTypes: Set<LimitType> = [.glmPrimary, .glmSecondary]
+        guard customDisplayTypes.isDisjoint(with: glmTypes) else { return }
+        customDisplayTypes.formUnion([.glmPrimary, .glmSecondary])
+    }
+
+    private func ensureDefaultKimiDisplayTypesForCustomMode() {
+        guard displayMode == .custom else { return }
+        let kimiTypes: Set<LimitType> = [.kimiPrimary, .kimiSecondary]
+        guard customDisplayTypes.isDisjoint(with: kimiTypes) else { return }
+        customDisplayTypes.formUnion([.kimiPrimary, .kimiSecondary])
     }
 
     private func ensureDefaultAntigravityDisplayTypesForCustomMode() {
@@ -1083,6 +1347,46 @@ final class UserSettings: ObservableObject {
 
         case .custom:
             return LimitType.allCases.filter { customDisplayTypes.contains($0) && $0.provider == .cursor }
+        }
+    }
+
+    func getActiveGlmDisplayTypes(glmUsageData: GlmUsageData? = nil, forMenuBar: Bool = false) -> [LimitType] {
+        let effectiveMode: DisplayMode = displayMode == .custom && customDisplayMenuBarOnly && !forMenuBar ? .smart : displayMode
+
+        switch effectiveMode {
+        case .smart:
+            guard let glmUsageData else { return [] }
+            var types: [LimitType] = []
+            if glmUsageData.primary != nil {
+                types.append(.glmPrimary)
+            }
+            if glmUsageData.secondary != nil {
+                types.append(.glmSecondary)
+            }
+            return types
+
+        case .custom:
+            return LimitType.allCases.filter { customDisplayTypes.contains($0) && $0.provider == .glm }
+        }
+    }
+
+    func getActiveKimiDisplayTypes(kimiUsageData: KimiUsageData? = nil, forMenuBar: Bool = false) -> [LimitType] {
+        let effectiveMode: DisplayMode = displayMode == .custom && customDisplayMenuBarOnly && !forMenuBar ? .smart : displayMode
+
+        switch effectiveMode {
+        case .smart:
+            guard let kimiUsageData else { return [] }
+            var types: [LimitType] = []
+            if kimiUsageData.primary != nil {
+                types.append(.kimiPrimary)
+            }
+            if kimiUsageData.secondary != nil {
+                types.append(.kimiSecondary)
+            }
+            return types
+
+        case .custom:
+            return LimitType.allCases.filter { customDisplayTypes.contains($0) && $0.provider == .kimi }
         }
     }
 

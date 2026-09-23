@@ -16,6 +16,7 @@ enum UsageError: LocalizedError {
     case decodingError
     case unauthorized              // 401 未授权
     case rateLimited               // 429 请求频率过高
+    case apiKeyInvalid             // API Key 型 provider（GLM/Kimi）Key 失效
     case httpError(statusCode: Int)  // 其他 HTTP 错误
 
     var errorDescription: String? {
@@ -38,6 +39,8 @@ enum UsageError: LocalizedError {
             return L.Error.unauthorized
         case .rateLimited:
             return L.Error.rateLimited
+        case .apiKeyInvalid:
+            return L.Error.apiKeyInvalid
         case .httpError(let statusCode):
             return "HTTP 错误: \(statusCode)"
         }

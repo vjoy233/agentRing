@@ -12,22 +12,30 @@ final class DataRefreshManager: ObservableObject {
     private let codexApiService = CodexAPIService()
     private let cursorApiService = CursorAPIService()
     private let antigravityApiService = AntigravityAPIService()
+    private let glmApiService = GlmAPIService()
+    private let kimiApiService = KimiAPIService()
     private let timerManager = TimerManager()
     private let settings = UserSettings.shared
 
     @Published var codexUsageData: CodexUsageData?
     @Published var cursorUsageData: CursorUsageData?
     @Published var antigravityUsageData: AntigravityUsageData?
+    @Published var glmUsageData: GlmUsageData?
+    @Published var kimiUsageData: KimiUsageData?
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published private(set) var codexNeedsRelogin = false
     @Published private(set) var cursorNeedsRelogin = false
     @Published private(set) var antigravityNeedsRelogin = false
+    @Published private(set) var glmNeedsRelogin = false
+    @Published private(set) var kimiNeedsRelogin = false
     let refreshState = RefreshState()
 
     private var lastCodexResetsAt: Date?
     private var lastCursorResetsAt: Date?
     private var lastAntigravityResetsAt: Date?
+    private var lastGlmResetsAt: Date?
+    private var lastKimiResetsAt: Date?
     private var lastManualRefreshTime: Date?
     private var lastAPIFetchTime: Date?
     private var refreshAnimationStartTime: Date?
@@ -37,6 +45,8 @@ final class DataRefreshManager: ObservableObject {
     private var codexSessionExpiredNotified = false
     private var cursorSessionExpiredNotified = false
     private var antigravitySessionExpiredNotified = false
+    private var glmSessionExpiredNotified = false
+    private var kimiSessionExpiredNotified = false
     private var pendingFetches = 0
 
     private var shouldFetchCodexUsage: Bool {
@@ -55,6 +65,22 @@ final class DataRefreshManager: ObservableObject {
         return settings.debugModeEnabled || settings.hasValidCursorCredentials
         #else
         return settings.hasValidCursorCredentials
+        #endif
+    }
+
+    private var shouldFetchGlmUsage: Bool {
+        #if DEBUG
+        return settings.debugModeEnabled || settings.hasValidGlmCredentials
+        #else
+        return settings.hasValidGlmCredentials
+        #endif
+    }
+
+    private var shouldFetchKimiUsage: Bool {
+        #if DEBUG
+        return settings.debugModeEnabled || settings.hasValidKimiCredentials
+        #else
+        return settings.hasValidKimiCredentials
         #endif
     }
 
@@ -94,12 +120,16 @@ final class DataRefreshManager: ObservableObject {
         let fetchCodex = shouldFetchCodexUsage
         let fetchCursor = shouldFetchCursorUsage
         let fetchAntigravity = shouldFetchAntigravityUsage
+        let fetchGlm = shouldFetchGlmUsage
+        let fetchKimi = shouldFetchKimiUsage
 
-        guard fetchCodex || fetchCursor || fetchAntigravity else {
+        guard fetchCodex || fetchCursor || fetchAntigravity || fetchGlm || fetchKimi else {
             isLoading = false
             clearCodexUsageState()
             clearCursorUsageState()
             clearAntigravityUsageState()
+            clearGlmUsageState()
+            clearKimiUsageState()
             errorMessage = UsageError.noCredentials.localizedDescription
             endRefreshAnimationWithMinimumDuration { }
             return
@@ -108,7 +138,7 @@ final class DataRefreshManager: ObservableObject {
         isLoading = true
         errorMessage = nil
         lastAPIFetchTime = Date()
-        pendingFetches = (fetchCodex ? 1 : 0) + (fetchCursor ? 1 : 0) + (fetchAntigravity ? 1 : 0)
+        pendingFetches = (fetchCodex ? 1 : 0) + (fetchCursor ? 1 : 0) + (fetchAntigravity ? 1 : 0) + (fetchGlm ? 1 : 0) + (fetchKimi ? 1 : 0)
 
         if fetchCodex {
             fetchCodexUsage()
@@ -118,6 +148,12 @@ final class DataRefreshManager: ObservableObject {
         }
         if fetchAntigravity {
             fetchAntigravityUsage()
+        }
+        if fetchGlm {
+            fetchGlmUsage()
+        }
+        if fetchKimi {
+            fetchKimiUsage()
         }
     }
 
@@ -154,6 +190,52 @@ final class DataRefreshManager: ObservableObject {
                     } else {
                         Logger.menuBar.info("Cursor 请求失败: \(error.localizedDescription)")
                         if self.cursorUsageData == nil && self.codexUsageData == nil && self.antigravityUsageData == nil {
+                            self.errorMessage = error.localizedDescription
+                        }
+                    }
+                }
+                self.noteFetchFinished()
+            }
+        }
+    }
+
+    private func fetchGlmUsage() {
+        glmApiService.fetchUsage { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                switch result {
+                case .success(let data):
+                    self.processGlmSuccess(data)
+                case .failure(let error):
+                    if case UsageError.unauthorized = error {
+                        self.markGlmNeedsRelogin()
+                    } else {
+                        Logger.menuBar.info("GLM 请求失败: \(error.localizedDescription)")
+                        if self.glmUsageData == nil && self.codexUsageData == nil && self.cursorUsageData == nil
+                            && self.antigravityUsageData == nil && self.kimiUsageData == nil {
+                            self.errorMessage = error.localizedDescription
+                        }
+                    }
+                }
+                self.noteFetchFinished()
+            }
+        }
+    }
+
+    private func fetchKimiUsage() {
+        kimiApiService.fetchUsage { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                switch result {
+                case .success(let data):
+                    self.processKimiSuccess(data)
+                case .failure(let error):
+                    if case UsageError.unauthorized = error {
+                        self.markKimiNeedsRelogin()
+                    } else {
+                        Logger.menuBar.info("Kimi 请求失败: \(error.localizedDescription)")
+                        if self.kimiUsageData == nil && self.codexUsageData == nil && self.cursorUsageData == nil
+                            && self.antigravityUsageData == nil && self.glmUsageData == nil {
                             self.errorMessage = error.localizedDescription
                         }
                     }
@@ -215,6 +297,40 @@ final class DataRefreshManager: ObservableObject {
         pushBluetoothSync()
     }
 
+    private func processGlmSuccess(_ data: GlmUsageData) {
+        glmUsageData = data
+        glmNeedsRelogin = false
+        if errorMessage == UsageError.sessionExpired.localizedDescription,
+           !codexNeedsRelogin, !cursorNeedsRelogin, !antigravityNeedsRelogin, !kimiNeedsRelogin {
+            errorMessage = nil
+        }
+        if errorMessage == UsageError.apiKeyInvalid.localizedDescription, !kimiNeedsRelogin {
+            errorMessage = nil
+        }
+
+        publishSmartMonitoringUtilizations()
+        lastGlmResetsAt = data.primary?.resetsAt
+
+        pushBluetoothSync()
+    }
+
+    private func processKimiSuccess(_ data: KimiUsageData) {
+        kimiUsageData = data
+        kimiNeedsRelogin = false
+        if errorMessage == UsageError.sessionExpired.localizedDescription,
+           !codexNeedsRelogin, !cursorNeedsRelogin, !antigravityNeedsRelogin, !glmNeedsRelogin {
+            errorMessage = nil
+        }
+        if errorMessage == UsageError.apiKeyInvalid.localizedDescription, !glmNeedsRelogin {
+            errorMessage = nil
+        }
+
+        publishSmartMonitoringUtilizations()
+        lastKimiResetsAt = data.primary?.resetsAt
+
+        pushBluetoothSync()
+    }
+
     private func processAntigravitySuccess(_ data: AntigravityUsageData) {
         antigravityUsageData = data
         antigravityNeedsRelogin = false
@@ -257,6 +373,12 @@ final class DataRefreshManager: ObservableObject {
         if let value = cursorUsageData?.included?.percentage {
             utilizations[.cursor] = value
         }
+        if let glm = glmUsageData, let value = monitoringUtilization(for: glm) {
+            utilizations[.glm] = value
+        }
+        if let kimi = kimiUsageData, let value = monitoringUtilization(for: kimi) {
+            utilizations[.kimi] = value
+        }
         if let antigravity = antigravityUsageData,
            let value = monitoringUtilization(for: antigravity) {
             utilizations[.antigravity] = value
@@ -286,6 +408,50 @@ final class DataRefreshManager: ObservableObject {
         antigravitySessionExpiredNotified = false
     }
 
+    private func clearGlmUsageState() {
+        glmUsageData = nil
+        lastGlmResetsAt = nil
+    }
+
+    private func clearKimiUsageState() {
+        kimiUsageData = nil
+        lastKimiResetsAt = nil
+    }
+
+    private func resetGlmReloginState() {
+        glmNeedsRelogin = false
+        glmSessionExpiredNotified = false
+    }
+
+    private func resetKimiReloginState() {
+        kimiNeedsRelogin = false
+        kimiSessionExpiredNotified = false
+    }
+
+    private func markGlmNeedsRelogin() {
+        glmNeedsRelogin = true
+        if !glmSessionExpiredNotified {
+            glmSessionExpiredNotified = true
+            Logger.menuBar.notice("GLM API Key 失效，请在设置中更新")
+        }
+        if codexUsageData == nil && cursorUsageData == nil && antigravityUsageData == nil && kimiUsageData == nil {
+            errorMessage = UsageError.apiKeyInvalid.localizedDescription
+        }
+        clearGlmUsageState()
+    }
+
+    private func markKimiNeedsRelogin() {
+        kimiNeedsRelogin = true
+        if !kimiSessionExpiredNotified {
+            kimiSessionExpiredNotified = true
+            Logger.menuBar.notice("Kimi API Key 失效，请在设置中更新")
+        }
+        if codexUsageData == nil && cursorUsageData == nil && antigravityUsageData == nil && glmUsageData == nil {
+            errorMessage = UsageError.apiKeyInvalid.localizedDescription
+        }
+        clearKimiUsageState()
+    }
+
     private func markCursorNeedsRelogin() {
         cursorNeedsRelogin = true
         if !cursorSessionExpiredNotified {
@@ -294,7 +460,7 @@ final class DataRefreshManager: ObservableObject {
                 NotificationManager.shared.sendCursorSessionExpiredNotification()
             }
         }
-        if codexUsageData == nil && antigravityUsageData == nil {
+        if codexUsageData == nil && antigravityUsageData == nil && glmUsageData == nil && kimiUsageData == nil {
             errorMessage = UsageError.sessionExpired.localizedDescription
         }
         clearCursorUsageState()
@@ -307,7 +473,7 @@ final class DataRefreshManager: ObservableObject {
             antigravitySessionExpiredNotified = true
             Logger.menuBar.notice("Antigravity 会话失效，需要重新登录 Antigravity 客户端")
         }
-        if codexUsageData == nil && cursorUsageData == nil {
+        if codexUsageData == nil && cursorUsageData == nil && glmUsageData == nil && kimiUsageData == nil {
             errorMessage = UsageError.sessionExpired.localizedDescription
         }
         clearAntigravityUsageState()
@@ -336,6 +502,24 @@ final class DataRefreshManager: ObservableObject {
         [
             antigravity.primary?.percentage,
             antigravity.secondary?.percentage
+        ]
+        .compactMap { $0 }
+        .max()
+    }
+
+    private func monitoringUtilization(for glm: GlmUsageData) -> Double? {
+        [
+            glm.primary?.percentage,
+            glm.secondary?.percentage
+        ]
+        .compactMap { $0 }
+        .max()
+    }
+
+    private func monitoringUtilization(for kimi: KimiUsageData) -> Double? {
+        [
+            kimi.primary?.percentage,
+            kimi.secondary?.percentage
         ]
         .compactMap { $0 }
         .max()
@@ -449,7 +633,7 @@ final class DataRefreshManager: ObservableObject {
 
         lastManualRefreshTime = now
         refreshAnimationStartTime = now
-        let fetchCount = [shouldFetchCodexUsage, shouldFetchCursorUsage, shouldFetchAntigravityUsage]
+        let fetchCount = [shouldFetchCodexUsage, shouldFetchCursorUsage, shouldFetchAntigravityUsage, shouldFetchGlmUsage, shouldFetchKimiUsage]
             .filter { $0 }
             .count
         if fetchCount >= 2 {
@@ -458,6 +642,10 @@ final class DataRefreshManager: ObservableObject {
             refreshState.refreshingProvider = .antigravity
         } else if shouldFetchCursorUsage {
             refreshState.refreshingProvider = .cursor
+        } else if shouldFetchGlmUsage {
+            refreshState.refreshingProvider = .glm
+        } else if shouldFetchKimiUsage {
+            refreshState.refreshingProvider = .kimi
         } else {
             refreshState.refreshingProvider = .codex
         }
@@ -466,6 +654,8 @@ final class DataRefreshManager: ObservableObject {
         resetCodexReloginState()
         resetCursorReloginState()
         resetAntigravityReloginState()
+        resetGlmReloginState()
+        resetKimiReloginState()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
             self?.refreshState.canRefresh = true
@@ -584,13 +774,21 @@ final class DataRefreshManager: ObservableObject {
             resetCursorReloginState()
             clearCursorUsageState()
         }
+        if provider == nil || provider == .glm {
+            resetGlmReloginState()
+            clearGlmUsageState()
+        }
+        if provider == nil || provider == .kimi {
+            resetKimiReloginState()
+            clearKimiUsageState()
+        }
         if provider == nil || provider == .antigravity {
             resetAntigravityReloginState()
             AntigravityAPIService.invalidateCredentialsCache()
             clearAntigravityUsageState()
         }
         NotificationManager.shared.resetAllNotificationStates()
-        if shouldFetchCodexUsage || shouldFetchCursorUsage || shouldFetchAntigravityUsage {
+        if shouldFetchCodexUsage || shouldFetchCursorUsage || shouldFetchAntigravityUsage || shouldFetchGlmUsage || shouldFetchKimiUsage {
             fetchUsage()
         }
     }
@@ -656,6 +854,8 @@ final class DataRefreshManager: ObservableObject {
         timerManager.invalidateAll()
         endRefreshActivity()
         antigravityApiService.cancelAllRequests()
+        glmApiService.cancelAllRequests()
+        kimiApiService.cancelAllRequests()
         if let wakeObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
             self.wakeObserver = nil

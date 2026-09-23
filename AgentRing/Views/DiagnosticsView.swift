@@ -101,6 +101,8 @@ private struct ProviderResultCard: View {
         switch result.providerType {
         case .codex: return "sparkle"
         case .cursor: return "cursorarrow.rays"
+        case .glm: return "bolt"
+        case .kimi: return "moon"
         case .antigravity, .antigravityThird: return "atom"
         }
     }
