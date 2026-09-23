@@ -23,7 +23,7 @@ struct CodingPlanAccountSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(String(format: L.CodingPlan.addTitle, provider.displayName))
+            Text(L.CodingPlan.addTitle(provider.displayName))
                 .font(.headline)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -101,7 +101,7 @@ struct CodingPlanAccountSheet: View {
             return
         }
         guard imported.provider == provider else {
-            importHint = String(format: L.CodingPlan.importProviderMismatch, imported.provider.displayName)
+            importHint = L.CodingPlan.importProviderMismatch(imported.provider.displayName)
             return
         }
         apiKey = imported.apiKey
@@ -150,7 +150,7 @@ struct CodingPlanAccountSheet: View {
     // MARK: - Account 构建
 
     /// 验证成功：GLM 用档位、Kimi 用 userId 尾号做账号标识与默认名
-    static func account(provider: ProviderType, apiKey: String, usage: ValidatedUsage) -> Account {
+    private static func account(provider: ProviderType, apiKey: String, usage: ValidatedUsage) -> Account {
         let fingerprint = String(apiKey.prefix(8))
         switch usage {
         case .glm(let data):
