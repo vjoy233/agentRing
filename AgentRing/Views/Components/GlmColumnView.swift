@@ -19,6 +19,37 @@ struct GlmColumnView: View {
         UserSettings.shared.getActiveGlmDisplayTypes(glmUsageData: glmUsageData)
     }
 
+    /// 与 CodexColumnView 相同：优先用户勾选的 5h 环，被关掉时 7d 提升为主环
+    private var primaryRingType: LimitType? {
+        if activeTypes.contains(.glmPrimary) {
+            return .glmPrimary
+        }
+        if activeTypes.contains(.glmSecondary) {
+            return .glmSecondary
+        }
+        return nil
+    }
+
+    private var primaryRingData: GlmUsageData.LimitData? {
+        let placeholder = GlmUsageData.LimitData(percentage: 0, resetsAt: nil)
+        let showPlaceholder = UserSettings.shared.shouldShowCustomPlaceholderInPopover
+
+        switch primaryRingType {
+        case .glmPrimary:
+            return glmUsageData.primary ?? (showPlaceholder ? placeholder : nil)
+        case .glmSecondary:
+            return glmUsageData.secondary ?? (showPlaceholder ? placeholder : nil)
+        default:
+            return nil
+        }
+    }
+
+    private var secondaryData: GlmUsageData.LimitData? { glmUsageData.secondary }
+
+    private var showSecondaryRing: Bool {
+        primaryRingType == .glmPrimary && activeTypes.contains(.glmSecondary) && secondaryData != nil
+    }
+
     private var isRefreshing: Bool {
         refreshState.isRefreshingProvider(.glm)
     }
@@ -26,15 +57,13 @@ struct GlmColumnView: View {
     var body: some View {
         VStack(spacing: 15) {
             ZStack {
-                if let primary = glmUsageData.primary {
+                if let ringData = primaryRingData {
                     ActivityRingView(
-                        outerPercentage: primary.percentage,
-                        innerPercentage: activeTypes.contains(.glmSecondary)
-                            ? glmUsageData.secondary?.percentage
-                            : nil,
-                        outerColor: UsageColorScheme.glmPrimaryColorSwiftUI(primary.percentage),
+                        outerPercentage: ringData.percentage,
+                        innerPercentage: showSecondaryRing ? secondaryData?.percentage : nil,
+                        outerColor: UsageColorScheme.glmPrimaryColorSwiftUI(ringData.percentage),
                         innerColor: UsageColorScheme.glmPairedInnerColorSwiftUI(
-                            glmUsageData.secondary?.percentage ?? 0
+                            secondaryData?.percentage ?? 0
                         ),
                         isRefreshing: isRefreshing,
                         rotationAngle: rotationAngle,

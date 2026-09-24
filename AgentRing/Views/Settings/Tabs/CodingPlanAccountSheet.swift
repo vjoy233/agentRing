@@ -118,6 +118,8 @@ struct CodingPlanAccountSheet: View {
         isValidating = true
         validationError = nil
 
+        // 验证请求走独立 service 实例是刻意的：共享实例的 fetchUsage 开头会
+        // cancelAllRequests()，周期刷新会把进行中的验证请求误杀成「已取消」
         if provider == .glm {
             GlmAPIService().validateApiKey(key) { result in
                 handleValidation(result: result.map { .glm($0) }, key: key)

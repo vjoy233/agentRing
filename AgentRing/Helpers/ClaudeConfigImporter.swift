@@ -16,7 +16,13 @@ enum ClaudeConfigImporter {
     }
 
     static func importFromClaudeCode() -> ImportedCredential? {
-        let url = FileManager.default.homeDirectoryForCurrentUser
+        // App Sandbox 下 homeDirectoryForCurrentUser 返回的是容器路径而非真实 home，
+        // 这里必须用 getpwuid 解析真实 home，才能命中 entitlements 里
+        // temporary-exception.files.home-relative-path.read-only 的 /.claude/settings.json 例外。
+        guard let pw = getpwuid(getuid()), let homeDir = pw.pointee.pw_dir else {
+            return nil
+        }
+        let url = URL(fileURLWithPath: String(cString: homeDir))
             .appendingPathComponent(".claude/settings.json")
         guard let data = try? Data(contentsOf: url),
               let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],

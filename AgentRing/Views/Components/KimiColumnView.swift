@@ -19,6 +19,37 @@ struct KimiColumnView: View {
         UserSettings.shared.getActiveKimiDisplayTypes(kimiUsageData: kimiUsageData)
     }
 
+    /// 与 CodexColumnView 相同：优先用户勾选的 5h 环，被关掉时 7d 提升为主环
+    private var primaryRingType: LimitType? {
+        if activeTypes.contains(.kimiPrimary) {
+            return .kimiPrimary
+        }
+        if activeTypes.contains(.kimiSecondary) {
+            return .kimiSecondary
+        }
+        return nil
+    }
+
+    private var primaryRingData: KimiUsageData.LimitData? {
+        let placeholder = KimiUsageData.LimitData(percentage: 0, resetsAt: nil)
+        let showPlaceholder = UserSettings.shared.shouldShowCustomPlaceholderInPopover
+
+        switch primaryRingType {
+        case .kimiPrimary:
+            return kimiUsageData.primary ?? (showPlaceholder ? placeholder : nil)
+        case .kimiSecondary:
+            return kimiUsageData.secondary ?? (showPlaceholder ? placeholder : nil)
+        default:
+            return nil
+        }
+    }
+
+    private var secondaryData: KimiUsageData.LimitData? { kimiUsageData.secondary }
+
+    private var showSecondaryRing: Bool {
+        primaryRingType == .kimiPrimary && activeTypes.contains(.kimiSecondary) && secondaryData != nil
+    }
+
     private var isRefreshing: Bool {
         refreshState.isRefreshingProvider(.kimi)
     }
@@ -26,15 +57,13 @@ struct KimiColumnView: View {
     var body: some View {
         VStack(spacing: 15) {
             ZStack {
-                if let primary = kimiUsageData.primary {
+                if let ringData = primaryRingData {
                     ActivityRingView(
-                        outerPercentage: primary.percentage,
-                        innerPercentage: activeTypes.contains(.kimiSecondary)
-                            ? kimiUsageData.secondary?.percentage
-                            : nil,
-                        outerColor: UsageColorScheme.kimiPrimaryColorSwiftUI(primary.percentage),
+                        outerPercentage: ringData.percentage,
+                        innerPercentage: showSecondaryRing ? secondaryData?.percentage : nil,
+                        outerColor: UsageColorScheme.kimiPrimaryColorSwiftUI(ringData.percentage),
                         innerColor: UsageColorScheme.kimiPairedInnerColorSwiftUI(
-                            kimiUsageData.secondary?.percentage ?? 0
+                            secondaryData?.percentage ?? 0
                         ),
                         isRefreshing: isRefreshing,
                         rotationAngle: rotationAngle,

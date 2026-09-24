@@ -1198,6 +1198,16 @@ final class UserSettings: ObservableObject {
         glmAccounts[index].alias = alias
     }
 
+    /// 刷新成功后回写当前账号卡标识（GLM 档位 / Kimi userId 尾号）：
+    /// 档位升级、或「仍要保存」的 fallback 账号（名字停在「GLM」）在刷新成功后由此补齐。
+    /// 只写 accountName，displayName 优先用户手填的 alias，不会被覆盖。
+    func refreshGlmAccountDisplayName(level: String) {
+        guard let index = glmAccounts.firstIndex(where: { $0.id == currentGlmAccountId }) else { return }
+        let name = "GLM (\(level))"
+        guard glmAccounts[index].accountName != name else { return }
+        glmAccounts[index].accountName = name
+    }
+
     @discardableResult
     func addKimiAccount(_ account: Account) -> Account {
         let stableId = account.accountIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -1253,6 +1263,14 @@ final class UserSettings: ObservableObject {
     func updateKimiAccount(_ account: Account, alias: String?) {
         guard let index = kimiAccounts.firstIndex(where: { $0.id == account.id }) else { return }
         kimiAccounts[index].alias = alias
+    }
+
+    /// 见 refreshGlmAccountDisplayName：Kimi 用 userId 尾号做账号卡标识
+    func refreshKimiAccountDisplayName(userId: String) {
+        guard let index = kimiAccounts.firstIndex(where: { $0.id == currentKimiAccountId }) else { return }
+        let name = "Kimi (\(String(userId.suffix(6))))"
+        guard kimiAccounts[index].accountName != name else { return }
+        kimiAccounts[index].accountName = name
     }
 
     private func postAccountChanged() {

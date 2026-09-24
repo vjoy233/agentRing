@@ -296,13 +296,28 @@ final class MenuBarIconRenderer {
         let showPlaceholder = settings.displayMode == .custom
         guard types.contains(.glmPrimary) || types.contains(.glmSecondary) else { return [] }
 
-        let outerPercentage = glm.primary?.percentage
-            ?? glm.secondary?.percentage
-            ?? (showPlaceholder ? 0 : nil)
+        // 与 buildCodexCluster 相同的选择逻辑：按用户勾选确定外环窗口，
+        // 勾选窗口无数据时回退另一窗口，都不剩才用占位环
+        let outerType: LimitType? = {
+            if types.contains(.glmPrimary), glm.primary != nil { return .glmPrimary }
+            if types.contains(.glmSecondary), glm.secondary != nil { return .glmSecondary }
+            if types.contains(.glmPrimary) { return .glmPrimary }
+            if types.contains(.glmSecondary) { return .glmSecondary }
+            return nil
+        }()
+
+        guard let outerType else { return [] }
+        let outerPercentage: Double? = {
+            switch outerType {
+            case .glmPrimary: return glm.primary?.percentage ?? (showPlaceholder ? 0 : nil)
+            case .glmSecondary: return glm.secondary?.percentage ?? (showPlaceholder ? 0 : nil)
+            default: return nil
+            }
+        }()
         guard let outerPercentage else { return [] }
 
         let innerPercentage: Double? = {
-            guard glm.primary != nil, glm.secondary != nil, types.contains(.glmSecondary) else { return nil }
+            guard outerType == .glmPrimary, types.contains(.glmSecondary) else { return nil }
             return glm.secondary?.percentage ?? (showPlaceholder ? 0 : nil)
         }()
 
@@ -336,13 +351,28 @@ final class MenuBarIconRenderer {
         let showPlaceholder = settings.displayMode == .custom
         guard types.contains(.kimiPrimary) || types.contains(.kimiSecondary) else { return [] }
 
-        let outerPercentage = kimi.primary?.percentage
-            ?? kimi.secondary?.percentage
-            ?? (showPlaceholder ? 0 : nil)
+        // 与 buildCodexCluster 相同的选择逻辑：按用户勾选确定外环窗口，
+        // 勾选窗口无数据时回退另一窗口，都不剩才用占位环
+        let outerType: LimitType? = {
+            if types.contains(.kimiPrimary), kimi.primary != nil { return .kimiPrimary }
+            if types.contains(.kimiSecondary), kimi.secondary != nil { return .kimiSecondary }
+            if types.contains(.kimiPrimary) { return .kimiPrimary }
+            if types.contains(.kimiSecondary) { return .kimiSecondary }
+            return nil
+        }()
+
+        guard let outerType else { return [] }
+        let outerPercentage: Double? = {
+            switch outerType {
+            case .kimiPrimary: return kimi.primary?.percentage ?? (showPlaceholder ? 0 : nil)
+            case .kimiSecondary: return kimi.secondary?.percentage ?? (showPlaceholder ? 0 : nil)
+            default: return nil
+            }
+        }()
         guard let outerPercentage else { return [] }
 
         let innerPercentage: Double? = {
-            guard kimi.primary != nil, kimi.secondary != nil, types.contains(.kimiSecondary) else { return nil }
+            guard outerType == .kimiPrimary, types.contains(.kimiSecondary) else { return nil }
             return kimi.secondary?.percentage ?? (showPlaceholder ? 0 : nil)
         }()
 

@@ -48,6 +48,11 @@ nonisolated struct GlmUsageResponse: Codable, Sendable {
         let nextResetTime: Int64?
     }
 
+    /// HTTP 200 但响应体报错：key 失效时智谱把 code=401 放在 body 里
+    var isErrorPayload: Bool {
+        code != 200 || data == nil
+    }
+
     func toUsageData() -> GlmUsageData {
         GlmUsageMapper.map(self)
     }

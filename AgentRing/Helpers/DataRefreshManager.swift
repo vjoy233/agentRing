@@ -311,6 +311,10 @@ final class DataRefreshManager: ObservableObject {
         publishSmartMonitoringUtilizations()
         lastGlmResetsAt = data.primary?.resetsAt
 
+        if let level = data.planLevel {
+            settings.refreshGlmAccountDisplayName(level: level)
+        }
+
         pushBluetoothSync()
     }
 
@@ -327,6 +331,10 @@ final class DataRefreshManager: ObservableObject {
 
         publishSmartMonitoringUtilizations()
         lastKimiResetsAt = data.primary?.resetsAt
+
+        if let userId = data.userId {
+            settings.refreshKimiAccountDisplayName(userId: userId)
+        }
 
         pushBluetoothSync()
     }

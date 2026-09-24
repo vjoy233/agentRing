@@ -41,7 +41,7 @@ class KimiAPIService: UsageProvider {
         cancelAllRequests()
 
         guard settings.hasValidKimiCredentials else {
-            completion(.failure(UsageError.noCredentials))
+            DispatchQueue.main.async { completion(.failure(UsageError.noCredentials)) }
             return
         }
 

@@ -126,7 +126,15 @@ nonisolated enum KimiUsageMapper {
     /// booster_wallet 余额 / 加油包数据不展示（A10）。
     static func map(_ response: KimiUsageResponse) -> KimiUsageData {
         func entry(duration: Int) -> KimiUsageResponse.WindowSummary? {
-            response.limits?.first { $0.window?.duration == duration }?.detail
+            response.limits?.first { entry in
+                guard entry.window?.duration == duration else { return false }
+                // 单位字段存在时必须是分钟，防上游改单位后 duration 数值被静默误读
+                if let unit = entry.window?.timeUnit, !unit.isEmpty,
+                   unit != "TIME_UNIT_MINUTE" {
+                    return false
+                }
+                return true
+            }?.detail
         }
 
         let primary = entry(duration: fiveHourDuration).flatMap { limitData(from: $0) }
@@ -143,10 +151,14 @@ nonisolated enum KimiUsageMapper {
         )
     }
 
-    /// limit/used/remaining 汇总：percentage = used / limit（used 缺失时用 limit − remaining 推导）
+    /// limit/used/remaining 汇总：percentage = used / limit（used 缺失时用 limit − remaining 推导）。
+    /// used 与 remaining 都缺失时无法推导，返回 nil 走 booster_wallet 兜底，
+    /// 不能退化为 limit − 0 = 100% 造成「额度用尽」误报。
     static func limitData(from summary: KimiUsageResponse.WindowSummary) -> KimiUsageData.LimitData? {
         guard let limit = summary.limit?.value, limit > 0 else { return nil }
-        let used = summary.used?.value ?? (limit - (summary.remaining?.value ?? 0))
+        guard let used = summary.used?.value ?? summary.remaining?.value.map({ limit - $0 }) else {
+            return nil
+        }
         return KimiUsageData.LimitData(
             percentage: min(100, max(0, used / limit * 100)),
             resetsAt: parseResetTime(summary.resetTime)

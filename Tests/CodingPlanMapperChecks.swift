@@ -100,6 +100,32 @@ struct CodingPlanMapperChecks {
             check("GLM 边界 fixture 解码", false, "\(error)")
         }
 
+        // HTTP 200 但响应体报错：key 失效时智谱把 code=401 放在 body 里
+        do {
+            let errorBody = try decode(
+                GlmUsageResponse.self,
+                """
+                {"code":401,"msg":"API Key 无效","success":false}
+                """
+            )
+            check("GLM 响应体 code=401 判为错误载荷", errorBody.isErrorPayload)
+            let errorUsage = errorBody.toUsageData()
+            check(
+                "GLM 错误载荷 map 后无窗口数据",
+                errorUsage.primary == nil && errorUsage.secondary == nil
+            )
+
+            let nullData = try decode(
+                GlmUsageResponse.self,
+                """
+                {"code":200,"data":null}
+                """
+            )
+            check("GLM data 缺失判为错误载荷", nullData.isErrorPayload)
+        } catch {
+            check("GLM 错误载荷 fixture 解码", false, "\(error)")
+        }
+
         // MARK: - Kimi
 
         let kimiFixture = """
@@ -161,6 +187,51 @@ struct CodingPlanMapperChecks {
             ).toUsageData()
             check("Kimi booster 兜底 primary=25%", approxEqual(boosterOnly.primary?.percentage ?? -1, 25), "got \(boosterOnly.primary?.percentage ?? -1)")
             check("Kimi booster 兜底 secondary=50%", approxEqual(boosterOnly.secondary?.percentage ?? -1, 50), "got \(boosterOnly.secondary?.percentage ?? -1)")
+
+            // used 与 remaining 同时缺失：不能退化为 limit − 0 = 100%，应返回 nil 走 booster 兜底
+            let noUsedNoRemaining = try decode(
+                KimiUsageResponse.self,
+                """
+                {"usage":null,"limits":[{"window":{"duration":300,"timeUnit":"TIME_UNIT_MINUTE"},"detail":{"limit":"100","resetTime":"2026-09-23T04:04:48Z"}}],
+                "booster_wallet":{"userId":"u3","usages":{"limit_5h":{"used_ratio":0.3,"reset_time":"2026-09-23T04:04:47Z"}}}}
+                """
+            ).toUsageData()
+            check(
+                "Kimi used/remaining 双缺失不误报 100%（走 booster 兜底=30%）",
+                approxEqual(noUsedNoRemaining.primary?.percentage ?? -1, 30),
+                "got \(noUsedNoRemaining.primary?.percentage ?? -1)"
+            )
+
+            // timeUnit 非分钟：该 entry 不参与窗口分类，防上游改单位后 duration 数值被静默误读
+            let wrongUnit = try decode(
+                KimiUsageResponse.self,
+                """
+                {"usage":{"limit":"100","used":"59","remaining":"41","resetTime":"2026-09-25T06:04:48Z"},
+                "limits":[{"window":{"duration":300,"timeUnit":"TIME_UNIT_SECOND"},"detail":{"limit":"100","used":"7","remaining":"93","resetTime":"2026-09-23T04:04:48Z"}}]}
+                """
+            ).toUsageData()
+            check(
+                "Kimi timeUnit 非分钟的 entry 被跳过（primary=nil）",
+                wrongUnit.primary == nil,
+                "got \(String(describing: wrongUnit.primary))"
+            )
+            check(
+                "Kimi 跳过后 7d 仍走顶层 usage 回退=59%",
+                approxEqual(wrongUnit.secondary?.percentage ?? -1, 59),
+                "got \(wrongUnit.secondary?.percentage ?? -1)"
+            )
+
+            // 全空响应：primary/secondary 都为 nil，即 service 层 noData 判定的输入
+            let empty = try decode(
+                KimiUsageResponse.self,
+                """
+                {"usage":null,"limits":[]}
+                """
+            ).toUsageData()
+            check(
+                "Kimi 全空响应无窗口数据（noData 输入）",
+                empty.primary == nil && empty.secondary == nil
+            )
         } catch {
             check("Kimi 边界 fixture 解码", false, "\(error)")
         }

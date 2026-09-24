@@ -42,7 +42,7 @@ class GlmAPIService: UsageProvider {
         cancelAllRequests()
 
         guard settings.hasValidGlmCredentials else {
-            completion(.failure(UsageError.noCredentials))
+            DispatchQueue.main.async { completion(.failure(UsageError.noCredentials)) }
             return
         }
 
@@ -87,7 +87,7 @@ class GlmAPIService: UsageProvider {
             }
             do {
                 let decoded = try JSONDecoder().decode(GlmUsageResponse.self, from: data)
-                if decoded.code != 200 || decoded.data == nil {
+                if decoded.isErrorPayload {
                     let code = decoded.code ?? http.statusCode
                     let error: UsageError = code == 401 ? .unauthorized : .httpError(statusCode: code)
                     DispatchQueue.main.async { completion(.failure(error)) }
