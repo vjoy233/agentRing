@@ -14,6 +14,8 @@ struct AuthSettingsView: View {
     @State private var antigravityCredentialsPresent = false
     @State private var isRecheckingAntigravity = false
     @State private var showDiagnostics = false
+    @State private var showAddGlmSheet = false
+    @State private var showAddKimiSheet = false
 
     var body: some View {
         SettingsPaneScroll {
@@ -21,6 +23,8 @@ struct AuthSettingsView: View {
                 Picker("", selection: $selectedProvider) {
                     Text("Codex").tag(ProviderType.codex)
                     Text("Cursor").tag(ProviderType.cursor)
+                    Text("GLM").tag(ProviderType.glm)
+                    Text("Kimi").tag(ProviderType.kimi)
                     Text("Antigravity").tag(ProviderType.antigravity)
                 }
                 .pickerStyle(.segmented)
@@ -50,6 +54,34 @@ struct AuthSettingsView: View {
                             onAdd: { WebLoginWindowManager.shared.showCursorLoginWindow() },
                             onUpdateAlias: { settings.updateCursorAccount($0, alias: $1) }
                         )
+                    case .glm:
+                        providerAccountsCard(
+                            accounts: settings.glmAccounts,
+                            currentId: settings.currentGlmAccountId,
+                            title: L.Account.glmAccounts,
+                            addTitle: L.Account.addGlmAccount,
+                            tokenLabel: "API Key",
+                            onSelect: { settings.switchToGlmAccount($0) },
+                            onAdd: { showAddGlmSheet = true },
+                            onUpdateAlias: { settings.updateGlmAccount($0, alias: $1) }
+                        )
+                        .sheet(isPresented: $showAddGlmSheet) {
+                            CodingPlanAccountSheet(provider: .glm) { settings.addGlmAccount($0) }
+                        }
+                    case .kimi:
+                        providerAccountsCard(
+                            accounts: settings.kimiAccounts,
+                            currentId: settings.currentKimiAccountId,
+                            title: L.Account.kimiAccounts,
+                            addTitle: L.Account.addKimiAccount,
+                            tokenLabel: "API Key",
+                            onSelect: { settings.switchToKimiAccount($0) },
+                            onAdd: { showAddKimiSheet = true },
+                            onUpdateAlias: { settings.updateKimiAccount($0, alias: $1) }
+                        )
+                        .sheet(isPresented: $showAddKimiSheet) {
+                            CodingPlanAccountSheet(provider: .kimi) { settings.addKimiAccount($0) }
+                        }
                     case .antigravity, .antigravityThird:
                         antigravityCard
                     }
@@ -64,6 +96,10 @@ struct AuthSettingsView: View {
                 if let accountToDelete {
                     if accountToDelete.provider == .cursor {
                         settings.removeCursorAccount(accountToDelete)
+                    } else if accountToDelete.provider == .glm {
+                        settings.removeGlmAccount(accountToDelete)
+                    } else if accountToDelete.provider == .kimi {
+                        settings.removeKimiAccount(accountToDelete)
                     } else {
                         settings.removeCodexAccount(accountToDelete)
                     }

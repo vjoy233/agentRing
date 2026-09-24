@@ -125,6 +125,10 @@ enum BluetoothPayloadBuilder {
                 if let payload = antigravityProvider(from: antigravityUsageData, thirdParty: true) {
                     providers.append(payload)
                 }
+            case .glm, .kimi:
+                // TODO(二期)：蓝牙副屏推送 GLM / Kimi 用量（D3 决定先做本体，
+                // 届时扩 pushPayload 签名并更新 docs/BLUETOOTH_PROTOCOL.md）
+                continue
             }
         }
 

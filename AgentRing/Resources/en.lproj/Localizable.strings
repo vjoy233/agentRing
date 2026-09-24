@@ -45,6 +45,10 @@
 "usage.cursor_relogin" = "Sign In Again";
 "usage.antigravity_title" = "Antigravity";
 "usage.antigravity_relogin" = "Sign In Again";
+"usage.glm_title" = "GLM";
+"usage.glm_relogin" = "Update API Key";
+"usage.kimi_title" = "Kimi";
+"usage.kimi_relogin" = "Update API Key";
 "usage.drag_to_reorder" = "Drag to reorder";
 
 // MARK: - Settings - Tabs
@@ -194,6 +198,7 @@
 "error.no_organizations_found" = "No organizations found";
 "error.unauthorized" = "Authentication failed, please check your credentials";
 "error.rate_limited" = "Too many requests, please try again later";
+"error.api_key_invalid" = "API Key is invalid or expired. Update it in Settings.";
 
 // MARK: - Launch at Login
 "launch.status.enabled" = "Enabled";
@@ -271,6 +276,10 @@
 "antigravity_secondary_limit" = "Antigravity Gemini 7-Day Limit";
 "antigravity_third_party_primary_limit" = "Antigravity Claude/GPT 5-Hour Limit";
 "antigravity_third_party_secondary_limit" = "Antigravity Claude/GPT 7-Day Limit";
+"glm_primary_limit" = "GLM 5-Hour Limit";
+"glm_secondary_limit" = "GLM 7-Day Limit";
+"kimi_primary_limit" = "Kimi 5-Hour Limit";
+"kimi_secondary_limit" = "Kimi 7-Day Limit";
 
 // MARK: - Detail Row Labels
 "detail_row.five_hour_limit" = "5h";
@@ -420,6 +429,16 @@
 "account.delete" = "Delete";
 "account.cancel" = "Cancel";
 "account.validate_and_add" = "Validate & Add";
+
+// MARK: - Coding Plan (GLM / Kimi)
+"codingplan.add_title" = "Add %@ Account";
+"codingplan.api_key_field" = "API Key";
+"codingplan.api_key_placeholder" = "Paste your API Key (sk-…)";
+"codingplan.import_from_claude" = "Import from Claude Code";
+"codingplan.import_mismatch" = "Current Claude Code backend is not GLM / Kimi; nothing to import.";
+"codingplan.import_provider_mismatch" = "Current Claude Code backend is %@; switch to that provider tab to import.";
+"codingplan.save_anyway" = "Save Anyway";
+"codingplan.empty_key" = "Please enter an API Key";
 "account.multi_org_added" = "Found %d organizations. Accounts have been created for each. You can set aliases in account details.";
 
 // MARK: - Usage Notifications
@@ -466,6 +485,10 @@
 "account.cursor_accounts" = "Cursor Accounts";
 "account.add_cursor_account" = "Add Cursor Account";
 "account.cursor_current_account" = "Current Cursor Account";
+"account.glm_accounts" = "GLM Accounts";
+"account.add_glm_account" = "Add GLM Account";
+"account.kimi_accounts" = "Kimi Accounts";
+"account.add_kimi_account" = "Add Kimi Account";
 "account.antigravity_title" = "Antigravity";
 "account.antigravity_enable" = "Monitor Antigravity usage";
 "account.antigravity_ready" = "Credentials ready (Keychain / local OAuth file)";
