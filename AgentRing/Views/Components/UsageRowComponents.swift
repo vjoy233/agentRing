@@ -250,6 +250,8 @@ struct UnifiedLimitRow: View {
     var codexData: CodexUsageData? = nil
     var cursorData: CursorUsageData? = nil
     var antigravityData: AntigravityUsageData? = nil
+    var glmData: GlmUsageData? = nil
+    var kimiData: KimiUsageData? = nil
     let showRemainingMode: Bool
 
     var body: some View {
@@ -325,6 +327,10 @@ struct UnifiedLimitRow: View {
         case .codexExtraUsage: return codexData?.extraUsage?.percentage
         case .cursorIncluded: return cursorData?.included?.percentage
         case .cursorOnDemand: return cursorData?.apiModels?.percentage ?? cursorData?.onDemand?.percentage
+        case .glmPrimary: return glmData?.primary?.percentage
+        case .glmSecondary: return glmData?.secondary?.percentage
+        case .kimiPrimary: return kimiData?.primary?.percentage
+        case .kimiSecondary: return kimiData?.secondary?.percentage
         case .antigravityPrimary: return antigravityData?.geminiPrimary?.percentage ?? antigravityData?.primary?.percentage
         case .antigravitySecondary: return antigravityData?.geminiSecondary?.percentage ?? antigravityData?.secondary?.percentage
         case .antigravityThirdPartyPrimary: return antigravityData?.thirdPartyPrimary?.percentage
@@ -362,6 +368,26 @@ struct UnifiedLimitRow: View {
                 return L.ExtraUsage.remainingAmount(remaining)
             }
             return L.ExtraUsage.usageAmount(onDemand.usedDollars, onDemand.limitDollars)
+
+        case .glmPrimary:
+            guard let primary = glmData?.primary else { return "-" }
+            let limitData = UsageLimitData(percentage: primary.percentage, resetsAt: primary.resetsAt)
+            return showRemainingMode ? limitData.formattedCompactRemaining : detailCompactResetTime(limitData)
+
+        case .glmSecondary:
+            guard let secondary = glmData?.secondary else { return "-" }
+            let limitData = UsageLimitData(percentage: secondary.percentage, resetsAt: secondary.resetsAt)
+            return showRemainingMode ? limitData.formattedCompactRemainingWithMinutes : limitData.formattedCompactResetDateWithMinutes
+
+        case .kimiPrimary:
+            guard let primary = kimiData?.primary else { return "-" }
+            let limitData = UsageLimitData(percentage: primary.percentage, resetsAt: primary.resetsAt)
+            return showRemainingMode ? limitData.formattedCompactRemaining : detailCompactResetTime(limitData)
+
+        case .kimiSecondary:
+            guard let secondary = kimiData?.secondary else { return "-" }
+            let limitData = UsageLimitData(percentage: secondary.percentage, resetsAt: secondary.resetsAt)
+            return showRemainingMode ? limitData.formattedCompactRemainingWithMinutes : limitData.formattedCompactResetDateWithMinutes
 
         case .antigravityPrimary:
             guard let limitData = (antigravityData?.geminiPrimary ?? antigravityData?.primary)?.asUsageLimitData() else { return "-" }

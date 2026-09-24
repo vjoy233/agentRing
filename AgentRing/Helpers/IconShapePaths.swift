@@ -115,7 +115,7 @@ struct IconShapePaths {
         let hexRadius = min(rect.width, rect.height) / 2 - 3
 
         switch type {
-        case .codexPrimary, .codexSecondary, .cursorIncluded, .cursorOnDemand, .antigravityPrimary, .antigravitySecondary, .antigravityThirdPartyPrimary, .antigravityThirdPartySecondary:
+        case .codexPrimary, .codexSecondary, .cursorIncluded, .cursorOnDemand, .glmPrimary, .glmSecondary, .kimiPrimary, .kimiSecondary, .antigravityPrimary, .antigravitySecondary, .antigravityThirdPartyPrimary, .antigravityThirdPartySecondary:
             return circlePath(in: rect)
 
         case .codexExtraUsage:

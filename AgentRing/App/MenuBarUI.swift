@@ -175,7 +175,25 @@ final class MenuBarUI {
             menu.addItem(item)
         }
 
-        if settings.codexAccounts.count > 1 || settings.cursorAccounts.count > 1 {
+        if settings.glmAccounts.count > 1 {
+            let glmSubmenu = createAccountSubmenu(accounts: settings.glmAccounts, currentId: settings.currentGlmAccountId, selector: #selector(MenuBarManager.switchGlmAccount(_:)), target: target)
+            let currentName = settings.currentGlmAccount?.displayName ?? "GLM"
+            let item = NSMenuItem(title: "GLM: \(currentName)", action: nil, keyEquivalent: "")
+            item.submenu = glmSubmenu
+            setMenuItemIcon(item, systemName: "person.2.fill")
+            menu.addItem(item)
+        }
+
+        if settings.kimiAccounts.count > 1 {
+            let kimiSubmenu = createAccountSubmenu(accounts: settings.kimiAccounts, currentId: settings.currentKimiAccountId, selector: #selector(MenuBarManager.switchKimiAccount(_:)), target: target)
+            let currentName = settings.currentKimiAccount?.displayName ?? "Kimi"
+            let item = NSMenuItem(title: "Kimi: \(currentName)", action: nil, keyEquivalent: "")
+            item.submenu = kimiSubmenu
+            setMenuItemIcon(item, systemName: "person.2.fill")
+            menu.addItem(item)
+        }
+
+        if settings.codexAccounts.count > 1 || settings.cursorAccounts.count > 1 || settings.glmAccounts.count > 1 || settings.kimiAccounts.count > 1 {
             menu.addItem(.separator())
         }
 
@@ -258,6 +276,8 @@ final class MenuBarUI {
         codexUsageData: CodexUsageData?,
         cursorUsageData: CursorUsageData?,
         antigravityUsageData: AntigravityUsageData? = nil,
+        glmUsageData: GlmUsageData? = nil,
+        kimiUsageData: KimiUsageData? = nil,
         hasUpdate: Bool = false,
         shouldShowBadge: Bool = false
     ) {
@@ -265,7 +285,9 @@ final class MenuBarUI {
         let cacheKey = generateCacheKey(
             codexUsageData: codexUsageData,
             cursorUsageData: cursorUsageData,
-            antigravityUsageData: antigravityUsageData
+            antigravityUsageData: antigravityUsageData,
+            glmUsageData: glmUsageData,
+            kimiUsageData: kimiUsageData
         )
 
         if let cachedImage = iconCache[cacheKey] {
@@ -277,6 +299,8 @@ final class MenuBarUI {
             codexUsageData: codexUsageData,
             cursorUsageData: cursorUsageData,
             antigravityUsageData: antigravityUsageData,
+            glmUsageData: glmUsageData,
+            kimiUsageData: kimiUsageData,
             button: button
         )
         if iconCache.count >= maxCacheSize {
@@ -293,7 +317,9 @@ final class MenuBarUI {
     private func generateCacheKey(
         codexUsageData: CodexUsageData?,
         cursorUsageData: CursorUsageData?,
-        antigravityUsageData: AntigravityUsageData?
+        antigravityUsageData: AntigravityUsageData?,
+        glmUsageData: GlmUsageData?,
+        kimiUsageData: KimiUsageData?
     ) -> String {
         var key = "\(settings.iconDisplayMode.rawValue)_\(settings.iconStyleMode.rawValue)_\(settings.displayMode.rawValue)_\(settings.showRemainingMode)"
         if let codexUsageData {
@@ -332,6 +358,28 @@ final class MenuBarUI {
             if let tpSecondary = antigravityUsageData.thirdPartySecondary { key += "_tps\(Int(tpSecondary.percentage))" }
         } else {
             key += "_no_antigravity"
+        }
+        if let glmUsageData {
+            let activeTypes = settings.getActiveGlmDisplayTypes(glmUsageData: glmUsageData, forMenuBar: true)
+                .map(\.rawValue)
+                .sorted()
+                .joined(separator: ",")
+            key += "_gm\(activeTypes)"
+            if let primary = glmUsageData.primary { key += "_p\(Int(primary.percentage))" }
+            if let secondary = glmUsageData.secondary { key += "_s\(Int(secondary.percentage))" }
+        } else {
+            key += "_no_glm"
+        }
+        if let kimiUsageData {
+            let activeTypes = settings.getActiveKimiDisplayTypes(kimiUsageData: kimiUsageData, forMenuBar: true)
+                .map(\.rawValue)
+                .sorted()
+                .joined(separator: ",")
+            key += "_ki\(activeTypes)"
+            if let primary = kimiUsageData.primary { key += "_p\(Int(primary.percentage))" }
+            if let secondary = kimiUsageData.secondary { key += "_s\(Int(secondary.percentage))" }
+        } else {
+            key += "_no_kimi"
         }
         return key
     }

@@ -20,6 +20,8 @@ final class MenuBarIconRenderer {
         codexUsageData: CodexUsageData?,
         cursorUsageData: CursorUsageData?,
         antigravityUsageData: AntigravityUsageData? = nil,
+        glmUsageData: GlmUsageData? = nil,
+        kimiUsageData: KimiUsageData? = nil,
         hasUpdate: Bool = false,
         button: NSStatusBarButton?
     ) -> NSImage {
@@ -28,6 +30,8 @@ final class MenuBarIconRenderer {
             codexUsageData: codexUsageData,
             cursorUsageData: cursorUsageData,
             antigravityUsageData: antigravityUsageData,
+            glmUsageData: glmUsageData,
+            kimiUsageData: kimiUsageData,
             isMonochrome: isMonochrome,
             button: button
         )
@@ -37,16 +41,22 @@ final class MenuBarIconRenderer {
         codexUsageData: CodexUsageData?,
         cursorUsageData: CursorUsageData?,
         antigravityUsageData: AntigravityUsageData? = nil,
+        glmUsageData: GlmUsageData? = nil,
+        kimiUsageData: KimiUsageData? = nil,
         isMonochrome: Bool,
         button: NSStatusBarButton?
     ) -> NSImage {
         let showingCodex = codexUsageData != nil
         let showingCursor = cursorUsageData != nil
         let showingAntigravity = antigravityUsageData != nil
+        let showingGlm = glmUsageData != nil
+        let showingKimi = kimiUsageData != nil
         let ordered = settings.orderedActiveProviders(
             codexUsageData: codexUsageData,
             cursorUsageData: cursorUsageData,
-            antigravityUsageData: antigravityUsageData
+            antigravityUsageData: antigravityUsageData,
+            glmUsageData: glmUsageData,
+            kimiUsageData: kimiUsageData
         )
         let showingMultiple = ordered.count > 1
 
@@ -94,6 +104,30 @@ final class MenuBarIconRenderer {
                     if let cursorUsageData {
                         icons.append(contentsOf: buildCursorCluster(
                             cursor: cursorUsageData,
+                            isMonochrome: true,
+                            button: button
+                        ))
+                    }
+                case .glm:
+                    if includeBrand, showingGlm,
+                       let brand = createProviderBrandIcon(provider: .glm, isMonochrome: isMonochrome, size: providerBrandIconSize) {
+                        icons.append(brand)
+                    }
+                    if let glmUsageData {
+                        icons.append(contentsOf: buildGlmCluster(
+                            glm: glmUsageData,
+                            isMonochrome: true,
+                            button: button
+                        ))
+                    }
+                case .kimi:
+                    if includeBrand, showingKimi,
+                       let brand = createProviderBrandIcon(provider: .kimi, isMonochrome: isMonochrome, size: providerBrandIconSize) {
+                        icons.append(brand)
+                    }
+                    if let kimiUsageData {
+                        icons.append(contentsOf: buildKimiCluster(
+                            kimi: kimiUsageData,
                             isMonochrome: true,
                             button: button
                         ))
@@ -236,6 +270,116 @@ final class MenuBarIconRenderer {
             createConcentricRingImage(
                 outerPercentage: UsageRingDisplay.displayedPercentage(
                     usedPercentage: resolvedOuter,
+                    showRemainingMode: settings.showRemainingMode
+                ),
+                innerPercentage: innerPercentage.map {
+                    UsageRingDisplay.displayedPercentage(
+                        usedPercentage: $0,
+                        showRemainingMode: settings.showRemainingMode
+                    )
+                },
+                outerColor: .black,
+                innerColor: NSColor.black.withAlphaComponent(0.78),
+                isMonochrome: true,
+                button: button
+            )
+        ]
+    }
+
+    /// GLM Coding Plan：外环 5h、内环 7d，仅剩 7d 时 7d 提升为主环
+    private func buildGlmCluster(
+        glm: GlmUsageData,
+        isMonochrome: Bool,
+        button: NSStatusBarButton?
+    ) -> [NSImage] {
+        let types = settings.getActiveGlmDisplayTypes(glmUsageData: glm, forMenuBar: true)
+        let showPlaceholder = settings.displayMode == .custom
+        guard types.contains(.glmPrimary) || types.contains(.glmSecondary) else { return [] }
+
+        // 与 buildCodexCluster 相同的选择逻辑：按用户勾选确定外环窗口，
+        // 勾选窗口无数据时回退另一窗口，都不剩才用占位环
+        let outerType: LimitType? = {
+            if types.contains(.glmPrimary), glm.primary != nil { return .glmPrimary }
+            if types.contains(.glmSecondary), glm.secondary != nil { return .glmSecondary }
+            if types.contains(.glmPrimary) { return .glmPrimary }
+            if types.contains(.glmSecondary) { return .glmSecondary }
+            return nil
+        }()
+
+        guard let outerType else { return [] }
+        let outerPercentage: Double? = {
+            switch outerType {
+            case .glmPrimary: return glm.primary?.percentage ?? (showPlaceholder ? 0 : nil)
+            case .glmSecondary: return glm.secondary?.percentage ?? (showPlaceholder ? 0 : nil)
+            default: return nil
+            }
+        }()
+        guard let outerPercentage else { return [] }
+
+        let innerPercentage: Double? = {
+            guard outerType == .glmPrimary, types.contains(.glmSecondary) else { return nil }
+            return glm.secondary?.percentage ?? (showPlaceholder ? 0 : nil)
+        }()
+
+        return [
+            createConcentricRingImage(
+                outerPercentage: UsageRingDisplay.displayedPercentage(
+                    usedPercentage: outerPercentage,
+                    showRemainingMode: settings.showRemainingMode
+                ),
+                innerPercentage: innerPercentage.map {
+                    UsageRingDisplay.displayedPercentage(
+                        usedPercentage: $0,
+                        showRemainingMode: settings.showRemainingMode
+                    )
+                },
+                outerColor: .black,
+                innerColor: NSColor.black.withAlphaComponent(0.78),
+                isMonochrome: true,
+                button: button
+            )
+        ]
+    }
+
+    /// Kimi Coding Plan：外环 5h、内环 7d，仅剩 7d 时 7d 提升为主环
+    private func buildKimiCluster(
+        kimi: KimiUsageData,
+        isMonochrome: Bool,
+        button: NSStatusBarButton?
+    ) -> [NSImage] {
+        let types = settings.getActiveKimiDisplayTypes(kimiUsageData: kimi, forMenuBar: true)
+        let showPlaceholder = settings.displayMode == .custom
+        guard types.contains(.kimiPrimary) || types.contains(.kimiSecondary) else { return [] }
+
+        // 与 buildCodexCluster 相同的选择逻辑：按用户勾选确定外环窗口，
+        // 勾选窗口无数据时回退另一窗口，都不剩才用占位环
+        let outerType: LimitType? = {
+            if types.contains(.kimiPrimary), kimi.primary != nil { return .kimiPrimary }
+            if types.contains(.kimiSecondary), kimi.secondary != nil { return .kimiSecondary }
+            if types.contains(.kimiPrimary) { return .kimiPrimary }
+            if types.contains(.kimiSecondary) { return .kimiSecondary }
+            return nil
+        }()
+
+        guard let outerType else { return [] }
+        let outerPercentage: Double? = {
+            switch outerType {
+            case .kimiPrimary: return kimi.primary?.percentage ?? (showPlaceholder ? 0 : nil)
+            case .kimiSecondary: return kimi.secondary?.percentage ?? (showPlaceholder ? 0 : nil)
+            default: return nil
+            }
+        }()
+        guard let outerPercentage else { return [] }
+
+        let innerPercentage: Double? = {
+            guard outerType == .kimiPrimary, types.contains(.kimiSecondary) else { return nil }
+            return kimi.secondary?.percentage ?? (showPlaceholder ? 0 : nil)
+        }()
+
+        return [
+            createConcentricRingImage(
+                outerPercentage: UsageRingDisplay.displayedPercentage(
+                    usedPercentage: outerPercentage,
                     showRemainingMode: settings.showRemainingMode
                 ),
                 innerPercentage: innerPercentage.map {
@@ -526,6 +670,10 @@ final class MenuBarIconRenderer {
             return ImageHelper.createSquareIcon(named: iconName, size: size, isTemplate: isMonochrome, sourceInset: isMonochrome ? 0 : 2)
         case .cursor:
             return ImageHelper.createCursorIcon(size: size, isTemplate: isMonochrome)
+        case .glm:
+            return ImageHelper.createGlmIcon(size: size, isTemplate: isMonochrome)
+        case .kimi:
+            return ImageHelper.createKimiIcon(size: size, isTemplate: isMonochrome)
         case .antigravity, .antigravityThird:
             return ImageHelper.createAntigravityIcon(size: size, isTemplate: isMonochrome)
         }

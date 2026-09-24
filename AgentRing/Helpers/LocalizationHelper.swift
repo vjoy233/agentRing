@@ -51,6 +51,10 @@ enum L {
         static var cursorAccounts: String { localized("account.cursor_accounts") }
         static var addCursorAccount: String { localized("account.add_cursor_account") }
         static var cursorCurrentAccount: String { localized("account.cursor_current_account") }
+        static var glmAccounts: String { localized("account.glm_accounts") }
+        static var addGlmAccount: String { localized("account.add_glm_account") }
+        static var kimiAccounts: String { localized("account.kimi_accounts") }
+        static var addKimiAccount: String { localized("account.add_kimi_account") }
         static var antigravityTitle: String { localized("account.antigravity_title") }
         static var antigravityEnableMonitoring: String { localized("account.antigravity_enable") }
         static var antigravityReady: String { localized("account.antigravity_ready") }
@@ -89,6 +93,10 @@ enum L {
         static var cursorRelogin: String { localized("usage.cursor_relogin") }
         static var antigravityTitle: String { localized("usage.antigravity_title") }
         static var antigravityRelogin: String { localized("usage.antigravity_relogin") }
+        static var glmTitle: String { localized("usage.glm_title") }
+        static var glmRelogin: String { localized("usage.glm_relogin") }
+        static var kimiTitle: String { localized("usage.kimi_title") }
+        static var kimiRelogin: String { localized("usage.kimi_relogin") }
         static var dragToReorder: String { localized("usage.drag_to_reorder") }
     }
     
@@ -356,6 +364,23 @@ enum L {
         static var noOrganizationsFound: String { localized("error.no_organizations_found") }
         static var unauthorized: String { localized("error.unauthorized") }
         static var rateLimited: String { localized("error.rate_limited") }
+        static var apiKeyInvalid: String { localized("error.api_key_invalid") }
+    }
+
+    // MARK: - Coding Plan 账号添加（GLM / Kimi）
+    enum CodingPlan {
+        static func addTitle(_ providerName: String) -> String {
+            String(format: localized("codingplan.add_title"), providerName)
+        }
+        static var apiKeyField: String { localized("codingplan.api_key_field") }
+        static var apiKeyPlaceholder: String { localized("codingplan.api_key_placeholder") }
+        static var importFromClaude: String { localized("codingplan.import_from_claude") }
+        static var importMismatch: String { localized("codingplan.import_mismatch") }
+        static func importProviderMismatch(_ providerName: String) -> String {
+            String(format: localized("codingplan.import_provider_mismatch"), providerName)
+        }
+        static var saveAnyway: String { localized("codingplan.save_anyway") }
+        static var emptyKey: String { localized("codingplan.empty_key") }
     }
 
     // MARK: - Diagnostics
@@ -421,6 +446,10 @@ enum L {
         static var antigravitySecondary: String { localized("antigravity_secondary_limit") }
         static var antigravityThirdPartyPrimary: String { localized("antigravity_third_party_primary_limit") }
         static var antigravityThirdPartySecondary: String { localized("antigravity_third_party_secondary_limit") }
+        static var glmPrimary: String { localized("glm_primary_limit") }
+        static var glmSecondary: String { localized("glm_secondary_limit") }
+        static var kimiPrimary: String { localized("kimi_primary_limit") }
+        static var kimiSecondary: String { localized("kimi_secondary_limit") }
     }
 
     // MARK: - Display Options (v2.0.0)

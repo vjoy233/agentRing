@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>macOS 菜单栏上的 AI 用量圆环</strong><br />
-  像 Apple Watch 健身圆环那样，一眼看清 Codex、Cursor、Antigravity 还剩多少额度。<br />
+  像 Apple Watch 健身圆环那样，一眼看清 Codex、Cursor、GLM、Kimi、Antigravity 还剩多少额度。<br />
   Swift 原生，安装包不到 7 MB。
 </p>
 
@@ -46,10 +46,10 @@
 
 ## 功能
 
-- **AI 编程助手额度聚合**：菜单栏同屏圆环监视，当前支持 Codex、Cursor、Antigravity
+- **AI 编程助手额度聚合**：菜单栏同屏圆环监视，当前支持 Codex、Cursor、GLM Coding Plan、Kimi Coding Plan、Antigravity
 - **原生设置质感**：侧边栏 + 分段认证页
 - **跟随系统**：深浅色、时间格式；界面语言为简体中文 / English
-- **多账户**：登录、切换、别名；Antigravity 使用本机凭证探测
+- **多账户**：登录、切换、别名；GLM / Kimi 粘贴 API Key（支持从 Claude Code 当前配置一键导入），Antigravity 使用本机凭证探测
 - **智能刷新**：用量变化时加快，空闲时放慢
 - **极简入口**：数据面板 `…` 直接进入设置
 - **副屏生态**：同一套圆环可推到 Android 闲置机、EPD 墨水屏、ESP32 LCD，全程本机直连
