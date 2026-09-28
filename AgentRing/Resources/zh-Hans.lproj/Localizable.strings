@@ -45,6 +45,10 @@
 "usage.cursor_relogin" = "重新登录";
 "usage.antigravity_title" = "Antigravity";
 "usage.antigravity_relogin" = "重新登录";
+"usage.glm_title" = "GLM";
+"usage.glm_relogin" = "更新 API Key";
+"usage.kimi_title" = "Kimi";
+"usage.kimi_relogin" = "更新 API Key";
 "usage.drag_to_reorder" = "拖动调整显示顺序";
 
 // MARK: - Settings - Tabs
@@ -194,6 +198,7 @@
 "error.no_organizations_found" = "未找到组织";
 "error.unauthorized" = "认证失败，请检查您的凭据";
 "error.rate_limited" = "请求过于频繁，请稍后再试";
+"error.api_key_invalid" = "API Key 无效或已过期，请在设置中更新。";
 
 // MARK: - Launch at Login
 "launch.status.enabled" = "已启用";
@@ -271,6 +276,10 @@
 "antigravity_secondary_limit" = "Antigravity Gemini 7天限制";
 "antigravity_third_party_primary_limit" = "Antigravity Claude/GPT 5小时限制";
 "antigravity_third_party_secondary_limit" = "Antigravity Claude/GPT 7天限制";
+"glm_primary_limit" = "GLM 5小时限制";
+"glm_secondary_limit" = "GLM 7天限制";
+"kimi_primary_limit" = "Kimi 5小时限制";
+"kimi_secondary_limit" = "Kimi 7天限制";
 
 // MARK: - Detail Row Labels
 "detail_row.five_hour_limit" = "5小时";
@@ -418,6 +427,16 @@
 "account.delete" = "删除";
 "account.cancel" = "取消";
 "account.validate_and_add" = "验证并添加";
+
+// MARK: - Coding Plan (GLM / Kimi)
+"codingplan.add_title" = "添加 %@ 账户";
+"codingplan.api_key_field" = "API Key";
+"codingplan.api_key_placeholder" = "粘贴 API Key（sk-…）";
+"codingplan.import_from_claude" = "从 Claude Code 导入";
+"codingplan.import_mismatch" = "当前 Claude Code 后端不是 GLM / Kimi，无法导入。";
+"codingplan.import_provider_mismatch" = "当前 Claude Code 后端是 %@，请切换到对应 provider 再导入。";
+"codingplan.save_anyway" = "仍要保存";
+"codingplan.empty_key" = "请输入 API Key";
 "account.multi_org_added" = "发现 %d 个组织，已自动为每个组织创建账户。可在账户详情中设置别名。";
 
 // MARK: - Usage Notifications
@@ -464,6 +483,10 @@
 "account.cursor_accounts" = "Cursor 账户";
 "account.add_cursor_account" = "添加 Cursor 账户";
 "account.cursor_current_account" = "当前 Cursor 账户";
+"account.glm_accounts" = "GLM 账户";
+"account.add_glm_account" = "添加 GLM 账户";
+"account.kimi_accounts" = "Kimi 账户";
+"account.add_kimi_account" = "添加 Kimi 账户";
 "account.antigravity_title" = "Antigravity";
 "account.antigravity_enable" = "监控 Antigravity 用量";
 "account.antigravity_ready" = "凭证已就绪（钥匙串 / 本地 OAuth 文件）";

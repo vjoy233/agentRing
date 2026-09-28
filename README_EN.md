@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>AI usage rings in your macOS menu bar</strong><br />
-  See remaining Codex, Cursor, and Antigravity quota the way Apple Watch shows Activity rings.<br />
+  See remaining Codex, Cursor, GLM, Kimi, and Antigravity quota the way Apple Watch shows Activity rings.<br />
   Native Swift. Installer under 7 MB.
 </p>
 
@@ -46,10 +46,10 @@
 
 ## Features
 
-- **AI usage aggregation**: glanceable menu bar rings; currently supports Codex, Cursor, and Antigravity
+- **AI usage aggregation**: glanceable menu bar rings; currently supports Codex, Cursor, GLM Coding Plan, Kimi Coding Plan, and Antigravity
 - **Native settings feel**: sidebar + segmented auth
 - **Follows the system**: appearance and clock; UI languages: Simplified Chinese / English
-- **Multi-account**: login, switch, aliases; Antigravity uses local credential discovery
+- **Multi-account**: login, switch, aliases; GLM / Kimi take pasted API keys (one-click import from the current Claude Code config), Antigravity uses local credential discovery
 - **Smart refresh**: faster when usage moves, slower when idle
 - **Short path**: popover `…` opens Settings directly
 - **Companion displays**: the same rings can stream to an idle Android phone, an e-paper panel, or an ESP32 LCD — all on-device, no cloud

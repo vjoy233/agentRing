@@ -5,7 +5,11 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPT="$REPO_ROOT/Scripts/generate-changelog.swift"
 
-OUTPUT=$(swift "$SCRIPT" v0.1.7 v0.1.8)
+# 显式传 repo slug（第 4 个参数）：否则脚本会优先读 GITHUB_REPOSITORY，
+# 在 fork 仓库的 CI 里是 <fork-owner>/agentRing，下面的 compare 链接断言就会误报。
+UPSTREAM_REPO="haorui-lab/agentRing"
+
+OUTPUT=$(swift "$SCRIPT" v0.1.7 v0.1.8 "" "$UPSTREAM_REPO")
 
 # 1. 必须包含 fix(auth)
 if ! grep -q "fix(auth)" <<< "$OUTPUT"; then
@@ -36,7 +40,7 @@ fi
 echo "PASS: contains installation notes"
 
 # 5. 测试 chore(skill) 保留（v0.1.6 到 v0.1.7 之间含 chore(skill)）
-OUTPUT_SKILL=$(swift "$SCRIPT" v0.1.6 v0.1.7)
+OUTPUT_SKILL=$(swift "$SCRIPT" v0.1.6 v0.1.7 "" "$UPSTREAM_REPO")
 if ! grep -q "chore(skill)" <<< "$OUTPUT_SKILL"; then
     echo "FAIL: changelog should keep meaningful chore(skill)"
     exit 1

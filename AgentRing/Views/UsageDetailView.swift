@@ -10,10 +10,14 @@ struct UsageDetailView: View {
     @Binding var codexUsageData: CodexUsageData?
     @Binding var cursorUsageData: CursorUsageData?
     @Binding var antigravityUsageData: AntigravityUsageData?
+    @Binding var glmUsageData: GlmUsageData?
+    @Binding var kimiUsageData: KimiUsageData?
     @Binding var errorMessage: String?
     @Binding var codexNeedsRelogin: Bool
     @Binding var cursorNeedsRelogin: Bool
     @Binding var antigravityNeedsRelogin: Bool
+    @Binding var glmNeedsRelogin: Bool
+    @Binding var kimiNeedsRelogin: Bool
     @ObservedObject var refreshState: RefreshState
     var onMenuAction: ((MenuAction) -> Void)? = nil
     @StateObject private var localization = LocalizationManager.shared
@@ -44,11 +48,15 @@ struct UsageDetailView: View {
         case codexRelogin
         case cursorRelogin
         case antigravityRelogin
+        case glmRelogin
+        case kimiRelogin
     }
 
     @State var codexAnimationType: LoadingAnimationType = .rainbow
     @State var cursorAnimationType: LoadingAnimationType = .rainbow
     @State var antigravityAnimationType: LoadingAnimationType = .rainbow
+    @State var glmAnimationType: LoadingAnimationType = .rainbow
+    @State var kimiAnimationType: LoadingAnimationType = .rainbow
     @State var rotationAngle: Double = 0
     @State var animationTimer: Timer?
     @State private var showAnimationTypeHint = false
@@ -66,7 +74,9 @@ struct UsageDetailView: View {
         UserSettings.shared.orderedActiveProviders(
             codexUsageData: codexUsageData,
             cursorUsageData: cursorUsageData,
-            antigravityUsageData: antigravityUsageData
+            antigravityUsageData: antigravityUsageData,
+            glmUsageData: glmUsageData,
+            kimiUsageData: kimiUsageData
         )
     }
 
@@ -76,7 +86,9 @@ struct UsageDetailView: View {
 
     private var providerColumnWidth: CGFloat {
         switch max(activeProviders.count, 1) {
-        case 4...: return 245
+        case 6...: return 225
+        case 5: return 235
+        case 4: return 245
         case 3: return 272
         case 2: return 276
         default: return 290
@@ -89,7 +101,9 @@ struct UsageDetailView: View {
 
     private var popoverWidth: CGFloat {
         switch activeProviders.count {
-        case 4...: return 1040
+        case 6...: return 1400
+        case 5: return 1220
+        case 4: return 1040
         case 3: return 860
         case 2: return 580
         default: return 320
@@ -108,6 +122,12 @@ struct UsageDetailView: View {
             types.append(contentsOf: UserSettings.shared.getActiveAntigravityDisplayTypes(antigravityUsageData: antigravityUsageData, provider: .antigravity))
             types.append(contentsOf: UserSettings.shared.getActiveAntigravityDisplayTypes(antigravityUsageData: antigravityUsageData, provider: .antigravityThird))
         }
+        if let glmUsageData {
+            types.append(contentsOf: UserSettings.shared.getActiveGlmDisplayTypes(glmUsageData: glmUsageData))
+        }
+        if let kimiUsageData {
+            types.append(contentsOf: UserSettings.shared.getActiveKimiDisplayTypes(kimiUsageData: kimiUsageData))
+        }
         return types
     }
 
@@ -123,9 +143,11 @@ struct UsageDetailView: View {
             UserSettings.shared.getActiveCodexDisplayTypes(codexUsageData: codexUsageData).count,
             UserSettings.shared.getActiveCursorDisplayTypes(cursorUsageData: cursorUsageData).count,
             UserSettings.shared.getActiveAntigravityDisplayTypes(antigravityUsageData: antigravityUsageData, provider: .antigravity).count,
-            UserSettings.shared.getActiveAntigravityDisplayTypes(antigravityUsageData: antigravityUsageData, provider: .antigravityThird).count
+            UserSettings.shared.getActiveAntigravityDisplayTypes(antigravityUsageData: antigravityUsageData, provider: .antigravityThird).count,
+            UserSettings.shared.getActiveGlmDisplayTypes(glmUsageData: glmUsageData).count,
+            UserSettings.shared.getActiveKimiDisplayTypes(kimiUsageData: kimiUsageData).count
         ].max() ?? 0
-        let hasAnyData = codexUsageData != nil || cursorUsageData != nil || antigravityUsageData != nil
+        let hasAnyData = codexUsageData != nil || cursorUsageData != nil || antigravityUsageData != nil || glmUsageData != nil || kimiUsageData != nil
         let rowCount = max(maxRowsPerProvider, hasAnyData || !activeProviders.isEmpty ? 1 : 0)
         // 明细行高度与 UnifiedLimitRow 共用同一份 metrics，避免两边漂移
         return baseHeight + UnifiedLimitRowMetrics.textHeight(rowCount: rowCount)
@@ -161,6 +183,22 @@ struct UsageDetailView: View {
                     Image(systemName: "cursorarrow.click")
                         .font(.system(size: 16, weight: .semibold))
                     Text(L.Usage.cursorTitle)
+                        .font(.headline)
+                case .glm:
+                    if let icon = ImageHelper.createGlmIcon(size: 18, isTemplate: false) {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .frame(width: 18, height: 18)
+                    }
+                    Text(L.Usage.glmTitle)
+                        .font(.headline)
+                case .kimi:
+                    if let icon = ImageHelper.createKimiIcon(size: 18, isTemplate: false) {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .frame(width: 18, height: 18)
+                    }
+                    Text(L.Usage.kimiTitle)
                         .font(.headline)
                 case .codex:
                     if let icon = ImageHelper.createCodexIcon(size: 18) {
@@ -243,8 +281,8 @@ struct UsageDetailView: View {
         } else if let errorMessage {
             errorState(
                 message: errorMessage,
-                needsRelogin: codexNeedsRelogin || cursorNeedsRelogin || antigravityNeedsRelogin,
-                reloginAction: codexNeedsRelogin ? .codexRelogin : (cursorNeedsRelogin ? .cursorRelogin : .antigravityRelogin)
+                needsRelogin: codexNeedsRelogin || cursorNeedsRelogin || antigravityNeedsRelogin || glmNeedsRelogin || kimiNeedsRelogin,
+                reloginAction: codexNeedsRelogin ? .codexRelogin : (cursorNeedsRelogin ? .cursorRelogin : (antigravityNeedsRelogin ? .antigravityRelogin : (glmNeedsRelogin ? .glmRelogin : .kimiRelogin)))
             )
         } else {
             VStack(spacing: 12) {
@@ -309,6 +347,8 @@ struct UsageDetailView: View {
         switch provider {
         case .codex: return L.Usage.codexTitle
         case .cursor: return L.Usage.cursorTitle
+        case .glm: return L.Usage.glmTitle
+        case .kimi: return L.Usage.kimiTitle
         case .antigravity: return L.Usage.antigravityTitle
         case .antigravityThird: return "Antigravity Third"
         }
@@ -356,6 +396,48 @@ struct UsageDetailView: View {
                     message: cursorNeedsRelogin ? L.Error.sessionExpired : (errorMessage ?? L.Usage.loading),
                     needsRelogin: cursorNeedsRelogin,
                     reloginAction: .cursorRelogin
+                )
+                .frame(maxWidth: .infinity)
+            }
+        case .glm:
+            if let glmUsageData {
+                GlmColumnView(
+                    glmUsageData: glmUsageData,
+                    showRemainingMode: showRemainingMode,
+                    refreshState: refreshState,
+                    animationType: $glmAnimationType,
+                    rotationAngle: $rotationAngle,
+                    remainingModeAnimationTrigger: remainingModeAnimationTrigger,
+                    onRefresh: { onMenuAction?(.refresh) },
+                    onAnimationHint: { showAnimationHint($0) }
+                )
+                .frame(maxWidth: .infinity)
+            } else {
+                errorState(
+                    message: glmNeedsRelogin ? L.Error.apiKeyInvalid : (errorMessage ?? L.Usage.loading),
+                    needsRelogin: glmNeedsRelogin,
+                    reloginAction: .glmRelogin
+                )
+                .frame(maxWidth: .infinity)
+            }
+        case .kimi:
+            if let kimiUsageData {
+                KimiColumnView(
+                    kimiUsageData: kimiUsageData,
+                    showRemainingMode: showRemainingMode,
+                    refreshState: refreshState,
+                    animationType: $kimiAnimationType,
+                    rotationAngle: $rotationAngle,
+                    remainingModeAnimationTrigger: remainingModeAnimationTrigger,
+                    onRefresh: { onMenuAction?(.refresh) },
+                    onAnimationHint: { showAnimationHint($0) }
+                )
+                .frame(maxWidth: .infinity)
+            } else {
+                errorState(
+                    message: kimiNeedsRelogin ? L.Error.apiKeyInvalid : (errorMessage ?? L.Usage.loading),
+                    needsRelogin: kimiNeedsRelogin,
+                    reloginAction: .kimiRelogin
                 )
                 .frame(maxWidth: .infinity)
             }
@@ -437,6 +519,8 @@ struct UsageDetailView: View {
         switch action {
         case .cursorRelogin: return L.Usage.cursorRelogin
         case .antigravityRelogin: return L.Usage.antigravityRelogin
+        case .glmRelogin: return L.Usage.glmRelogin
+        case .kimiRelogin: return L.Usage.kimiRelogin
         default: return L.Usage.codexRelogin
         }
     }
@@ -598,10 +682,14 @@ struct UsageDetailView_Previews: PreviewProvider {
             codexUsageData: $sampleCodexData,
             cursorUsageData: .constant(nil),
             antigravityUsageData: .constant(nil),
+            glmUsageData: .constant(nil),
+            kimiUsageData: .constant(nil),
             errorMessage: $error,
             codexNeedsRelogin: $needsRelogin,
             cursorNeedsRelogin: .constant(false),
             antigravityNeedsRelogin: .constant(false),
+            glmNeedsRelogin: .constant(false),
+            kimiNeedsRelogin: .constant(false),
             refreshState: RefreshState(),
             hasAvailableUpdate: $hasUpdate,
             shouldShowUpdateBadge: $showBadge

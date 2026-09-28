@@ -37,7 +37,7 @@ class KeychainManager {
     private var service: String = "app.agentring.AgentRing"
     /// 旧版 Bundle ID 对应的 Keychain service，用于一次性迁移
     private let legacyService = "app.agentsring.AgentsRing"
-    private let migratableAccountKeys = ["accounts", "accounts_codex", "accounts_cursor"]
+    private let migratableAccountKeys = ["accounts", "accounts_codex", "accounts_cursor", "accounts_glm", "accounts_kimi"]
     #endif
     
     // MARK: - 账户列表存储（v2.1.0 多账户支持）
@@ -194,6 +194,90 @@ class KeychainManager {
     @discardableResult
     func deleteCursorAccounts() -> Bool {
         store.delete(key: "accounts_cursor")
+    }
+    #endif
+
+    // MARK: - GLM 账户列表存储
+
+    #if DEBUG
+    @discardableResult
+    func saveGlmAccounts(_ accounts: [Account]) -> Bool {
+        let encoder = JSONEncoder()
+        guard let data = try? encoder.encode(accounts) else {
+            Logger.keychain.error("[Debug] GLM 账户列表编码失败")
+            return false
+        }
+        UserDefaults.standard.set(data, forKey: debugKeyPrefix + "accounts_glm")
+        return true
+    }
+
+    func loadGlmAccounts() -> [Account]? {
+        guard let data = UserDefaults.standard.data(forKey: debugKeyPrefix + "accounts_glm") else {
+            return nil
+        }
+        return try? JSONDecoder().decode([Account].self, from: data)
+    }
+
+    @discardableResult
+    func deleteGlmAccounts() -> Bool {
+        UserDefaults.standard.removeObject(forKey: debugKeyPrefix + "accounts_glm")
+        return true
+    }
+    #else
+    @discardableResult
+    func saveGlmAccounts(_ accounts: [Account]) -> Bool {
+        saveAccountsToStore(key: "accounts_glm", accounts: accounts)
+    }
+
+    func loadGlmAccounts() -> [Account]? {
+        loadAccountsFromStore(key: "accounts_glm")
+    }
+
+    @discardableResult
+    func deleteGlmAccounts() -> Bool {
+        store.delete(key: "accounts_glm")
+    }
+    #endif
+
+    // MARK: - Kimi 账户列表存储
+
+    #if DEBUG
+    @discardableResult
+    func saveKimiAccounts(_ accounts: [Account]) -> Bool {
+        let encoder = JSONEncoder()
+        guard let data = try? encoder.encode(accounts) else {
+            Logger.keychain.error("[Debug] Kimi 账户列表编码失败")
+            return false
+        }
+        UserDefaults.standard.set(data, forKey: debugKeyPrefix + "accounts_kimi")
+        return true
+    }
+
+    func loadKimiAccounts() -> [Account]? {
+        guard let data = UserDefaults.standard.data(forKey: debugKeyPrefix + "accounts_kimi") else {
+            return nil
+        }
+        return try? JSONDecoder().decode([Account].self, from: data)
+    }
+
+    @discardableResult
+    func deleteKimiAccounts() -> Bool {
+        UserDefaults.standard.removeObject(forKey: debugKeyPrefix + "accounts_kimi")
+        return true
+    }
+    #else
+    @discardableResult
+    func saveKimiAccounts(_ accounts: [Account]) -> Bool {
+        saveAccountsToStore(key: "accounts_kimi", accounts: accounts)
+    }
+
+    func loadKimiAccounts() -> [Account]? {
+        loadAccountsFromStore(key: "accounts_kimi")
+    }
+
+    @discardableResult
+    func deleteKimiAccounts() -> Bool {
+        store.delete(key: "accounts_kimi")
     }
     #endif
 
