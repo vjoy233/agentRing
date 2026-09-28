@@ -70,6 +70,66 @@ enum ImageHelper {
         return image
     }
 
+    static func createGlmIcon(size: CGFloat, isTemplate: Bool) -> NSImage? {
+        let image = NSImage(size: NSSize(width: size, height: size))
+        image.lockFocus()
+
+        let rect = NSRect(x: 1, y: 1, width: size - 2, height: size - 2)
+        let path = NSBezierPath(roundedRect: rect, xRadius: size * 0.22, yRadius: size * 0.22)
+        if isTemplate {
+            NSColor.black.setFill()
+        } else {
+            NSColor(red: 62/255.0, green: 95/255.0, blue: 251/255.0, alpha: 1).setFill()
+        }
+        path.fill()
+
+        let font = NSFont.systemFont(ofSize: size * 0.55, weight: .bold)
+        let letter = "G"
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: NSColor.white
+        ]
+        let textSize = letter.size(withAttributes: attrs)
+        letter.draw(
+            at: NSPoint(x: (size - textSize.width) / 2, y: (size - textSize.height) / 2 - 0.5),
+            withAttributes: attrs
+        )
+
+        image.unlockFocus()
+        image.isTemplate = isTemplate
+        return image
+    }
+
+    static func createKimiIcon(size: CGFloat, isTemplate: Bool) -> NSImage? {
+        let image = NSImage(size: NSSize(width: size, height: size))
+        image.lockFocus()
+
+        let rect = NSRect(x: 1, y: 1, width: size - 2, height: size - 2)
+        let path = NSBezierPath(roundedRect: rect, xRadius: size * 0.22, yRadius: size * 0.22)
+        if isTemplate {
+            NSColor.black.setFill()
+        } else {
+            NSColor(red: 125/255.0, green: 95/255.0, blue: 255/255.0, alpha: 1).setFill()
+        }
+        path.fill()
+
+        let font = NSFont.systemFont(ofSize: size * 0.55, weight: .bold)
+        let letter = "K"
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: NSColor.white
+        ]
+        let textSize = letter.size(withAttributes: attrs)
+        letter.draw(
+            at: NSPoint(x: (size - textSize.width) / 2, y: (size - textSize.height) / 2 - 0.5),
+            withAttributes: attrs
+        )
+
+        image.unlockFocus()
+        image.isTemplate = isTemplate
+        return image
+    }
+
     static func createAntigravityIcon(size: CGFloat, isTemplate: Bool) -> NSImage? {
         let image = NSImage(size: NSSize(width: size, height: size))
         image.lockFocus()

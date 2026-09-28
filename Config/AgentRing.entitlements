@@ -27,6 +27,12 @@
 	<key>com.apple.security.temporary-exception.files.home-relative-path.read-only</key>
 	<array>
 		<string>/Library/Containers/app.agentsring.AgentsRing/</string>
+		<!--
+		  Claude Code 一键导入（ClaudeConfigImporter）需要读真实 home 的
+		  ~/.claude/settings.json（env.ANTHROPIC_BASE_URL / ANTHROPIC_AUTH_TOKEN），
+		  只读这一个文件，不放开整个 home。
+		-->
+		<string>/.claude/settings.json</string>
 	</array>
 </dict>
 </plist>

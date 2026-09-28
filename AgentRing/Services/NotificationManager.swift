@@ -104,9 +104,17 @@ final class NotificationManager {
     }
 
     private func notificationKey(for type: LimitType, suffix: String? = nil) -> String {
-        let accountId = type.provider == .cursor
-            ? UserSettings.shared.currentCursorAccountId
-            : UserSettings.shared.currentCodexAccountId
+        let accountId: UUID?
+        switch type.provider {
+        case .cursor:
+            accountId = UserSettings.shared.currentCursorAccountId
+        case .glm:
+            accountId = UserSettings.shared.currentGlmAccountId
+        case .kimi:
+            accountId = UserSettings.shared.currentKimiAccountId
+        default:
+            accountId = UserSettings.shared.currentCodexAccountId
+        }
         return Self.makeNotificationKey(
             provider: type.provider,
             accountId: accountId,

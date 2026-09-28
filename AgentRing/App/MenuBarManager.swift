@@ -55,11 +55,15 @@ final class MenuBarManager: ObservableObject {
     @Published var codexUsageData: CodexUsageData?
     @Published var cursorUsageData: CursorUsageData?
     @Published var antigravityUsageData: AntigravityUsageData?
+    @Published var glmUsageData: GlmUsageData?
+    @Published var kimiUsageData: KimiUsageData?
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var codexNeedsRelogin = false
     @Published var cursorNeedsRelogin = false
     @Published var antigravityNeedsRelogin = false
+    @Published var glmNeedsRelogin = false
+    @Published var kimiNeedsRelogin = false
     @Published var hasAvailableUpdate = false
     @Published var latestVersion: String?
     private var acknowledgedVersion: String?
@@ -108,11 +112,27 @@ final class MenuBarManager: ObservableObject {
             }
             .store(in: &cancellables)
 
+        dataManager.$glmUsageData
+            .sink { [weak self] data in
+                self?.glmUsageData = data
+                self?.updateMenuBarIcon()
+            }
+            .store(in: &cancellables)
+
+        dataManager.$kimiUsageData
+            .sink { [weak self] data in
+                self?.kimiUsageData = data
+                self?.updateMenuBarIcon()
+            }
+            .store(in: &cancellables)
+
         dataManager.$isLoading.assign(to: &$isLoading)
         dataManager.$errorMessage.assign(to: &$errorMessage)
         dataManager.$codexNeedsRelogin.assign(to: &$codexNeedsRelogin)
         dataManager.$cursorNeedsRelogin.assign(to: &$cursorNeedsRelogin)
         dataManager.$antigravityNeedsRelogin.assign(to: &$antigravityNeedsRelogin)
+        dataManager.$glmNeedsRelogin.assign(to: &$glmNeedsRelogin)
+        dataManager.$kimiNeedsRelogin.assign(to: &$kimiNeedsRelogin)
     }
 
     @objc private func handleClick(_ sender: NSStatusBarButton) {
@@ -162,6 +182,12 @@ final class MenuBarManager: ObservableObject {
             closePopover()
             WebLoginWindowManager.shared.showCursorLoginWindow()
         case .antigravityRelogin:
+            closePopover()
+            openAuthSettings()
+        case .glmRelogin:
+            closePopover()
+            openAuthSettings()
+        case .kimiRelogin:
             closePopover()
             openAuthSettings()
         case .quit:
@@ -235,7 +261,9 @@ final class MenuBarManager: ObservableObject {
         let activeProviders = settings.orderedActiveProviders(
             codexUsageData: codexUsageData,
             cursorUsageData: cursorUsageData,
-            antigravityUsageData: antigravityUsageData
+            antigravityUsageData: antigravityUsageData,
+            glmUsageData: glmUsageData,
+            kimiUsageData: kimiUsageData
         )
         let activeProvidersCount = activeProviders.count
         let showsMultiple = activeProvidersCount > 1
@@ -245,7 +273,9 @@ final class MenuBarManager: ObservableObject {
 
         let width: CGFloat = {
             switch activeProvidersCount {
-            case 4...: return 1020
+            case 6...: return 1380
+            case 5: return 1200
+            case 4: return 1020
             case 3: return 860
             case 2: return 580
             default: return 320
@@ -255,9 +285,11 @@ final class MenuBarManager: ObservableObject {
             settings.getActiveCodexDisplayTypes(codexUsageData: codexUsageData).count,
             settings.getActiveCursorDisplayTypes(cursorUsageData: cursorUsageData).count,
             settings.getActiveAntigravityDisplayTypes(antigravityUsageData: antigravityUsageData, provider: .antigravity).count,
-            settings.getActiveAntigravityDisplayTypes(antigravityUsageData: antigravityUsageData, provider: .antigravityThird).count
+            settings.getActiveAntigravityDisplayTypes(antigravityUsageData: antigravityUsageData, provider: .antigravityThird).count,
+            settings.getActiveGlmDisplayTypes(glmUsageData: glmUsageData).count,
+            settings.getActiveKimiDisplayTypes(kimiUsageData: kimiUsageData).count
         ].max() ?? 0
-        let hasAnyData = codexUsageData != nil || cursorUsageData != nil || antigravityUsageData != nil
+        let hasAnyData = codexUsageData != nil || cursorUsageData != nil || antigravityUsageData != nil || glmUsageData != nil || kimiUsageData != nil
         let rowCount = max(maxRowsPerProvider, hasAnyData || activeProvidersCount > 0 ? 1 : 0)
         let rowsHeight = CGFloat(rowCount) * rowHeight + CGFloat(max(0, rowCount - 1)) * spacing
         return NSSize(width: width, height: baseHeight + rowsHeight)
@@ -296,6 +328,16 @@ final class MenuBarManager: ObservableObject {
     @objc func switchCursorAccount(_ sender: NSMenuItem) {
         guard let account = sender.representedObject as? Account else { return }
         settings.switchToCursorAccount(account)
+    }
+
+    @objc func switchGlmAccount(_ sender: NSMenuItem) {
+        guard let account = sender.representedObject as? Account else { return }
+        settings.switchToGlmAccount(account)
+    }
+
+    @objc func switchKimiAccount(_ sender: NSMenuItem) {
+        guard let account = sender.representedObject as? Account else { return }
+        settings.switchToKimiAccount(account)
     }
 
     @objc func checkForUpdates() {
@@ -396,6 +438,8 @@ final class MenuBarManager: ObservableObject {
             codexUsageData: codexUsageData,
             cursorUsageData: cursorUsageData,
             antigravityUsageData: antigravityUsageData,
+            glmUsageData: glmUsageData,
+            kimiUsageData: kimiUsageData,
             hasUpdate: hasAvailableUpdate,
             shouldShowBadge: shouldShowUpdateBadge
         )
@@ -433,10 +477,14 @@ private struct UsageDetailHost: View {
             codexUsageData: $manager.codexUsageData,
             cursorUsageData: $manager.cursorUsageData,
             antigravityUsageData: $manager.antigravityUsageData,
+            glmUsageData: $manager.glmUsageData,
+            kimiUsageData: $manager.kimiUsageData,
             errorMessage: $manager.errorMessage,
             codexNeedsRelogin: Binding(get: { manager.codexNeedsRelogin }, set: { _ in }),
             cursorNeedsRelogin: Binding(get: { manager.cursorNeedsRelogin }, set: { _ in }),
             antigravityNeedsRelogin: Binding(get: { manager.antigravityNeedsRelogin }, set: { _ in }),
+            glmNeedsRelogin: Binding(get: { manager.glmNeedsRelogin }, set: { _ in }),
+            kimiNeedsRelogin: Binding(get: { manager.kimiNeedsRelogin }, set: { _ in }),
             refreshState: manager.refreshState,
             onMenuAction: { action in manager.handleMenuAction(action) },
             hasAvailableUpdate: $manager.hasAvailableUpdate,

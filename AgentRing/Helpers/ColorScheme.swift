@@ -112,6 +112,32 @@ enum UsageColorScheme {
         adaptive(cursorOnDemandColor(percentage), for: statusButton)
     }
 
+    // GLM Coding Plan：智谱 z.ai 品牌青蓝（官网亮端 ≈#00d4ff）压低饱和的 Dashboard 版；
+    // 色相与 Antigravity 灰蓝、Kimi 紫错开，避免弹窗并排时混淆
+    private static let dashboardGlmBlue = NSColor(red: 78/255.0, green: 156/255.0, blue: 212/255.0, alpha: 1.0)
+
+    static func glmPrimaryColorSwiftUI(_ percentage: Double, opacity: Double = 1.0) -> Color {
+        color(dashboardGlmBlue, opacity: opacity)
+    }
+
+    /// Dashboard 双环内环：外环蓝的压暗版
+    static func glmPairedInnerColorSwiftUI(_ percentage: Double, opacity: Double = 1.0) -> Color {
+        color(darkened(dashboardGlmBlue, by: 0.92), opacity: opacity)
+    }
+
+    // Kimi Coding Plan：紫色为弹窗调色板区分色而非品牌色（Kimi 官方视觉是
+    // 深蓝/冰蓝 + 黑白，冷蓝系已被 Antigravity/GLM 占用），此处为压低饱和的 Dashboard 版
+    private static let dashboardKimiViolet = NSColor(red: 139/255.0, green: 118/255.0, blue: 206/255.0, alpha: 1.0)
+
+    static func kimiPrimaryColorSwiftUI(_ percentage: Double, opacity: Double = 1.0) -> Color {
+        color(dashboardKimiViolet, opacity: opacity)
+    }
+
+    /// Dashboard 双环内环：外环紫的压暗版
+    static func kimiPairedInnerColorSwiftUI(_ percentage: Double, opacity: Double = 1.0) -> Color {
+        color(darkened(dashboardKimiViolet, by: 0.92), opacity: opacity)
+    }
+
     /// Antigravity 5 小时：Google 科技蓝
     private static let activityAntigravityBlue = NSColor(red: 26/255.0, green: 115/255.0, blue: 232/255.0, alpha: 1.0)
     /// Antigravity 7 天：亮紫
