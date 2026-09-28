@@ -3,7 +3,7 @@
 //  Agent Ring
 //
 //  GLM / Kimi Coding Plan mapper 行为测试（standalone，由 Scripts/test-coding-plan-mapper.sh 编译运行）
-//  fixture 来自 2026-09-23 端点实测响应（脱敏），见 docs/glm-kimi-provider-plan.md 第四节。
+//  fixture 来自 2026-09-23 端点实测响应（脱敏）。
 //
 
 import Foundation

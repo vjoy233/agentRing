@@ -123,7 +123,7 @@ nonisolated enum KimiUsageMapper {
 
     /// 主路径：limits[] 中 duration=300 → 5h、duration=10080 → 7d；
     /// 7d 缺失时回退顶层 usage；仍取不到再回退 booster_wallet.usages（字段最规整的备选路径）。
-    /// booster_wallet 余额 / 加油包数据不展示（A10）。
+    /// booster_wallet 余额 / 加油包数据不展示。
     static func map(_ response: KimiUsageResponse) -> KimiUsageData {
         func entry(duration: Int) -> KimiUsageResponse.WindowSummary? {
             response.limits?.first { entry in

@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// GLM / Kimi Coding Plan 添加账号弹窗：粘贴即验证，
-/// 验证失败标红提示但允许保存（A2），支持从 Claude Code 当前配置一键导入（D1）。
+/// 验证失败标红提示但允许保存，支持从 Claude Code 当前配置一键导入。
 struct CodingPlanAccountSheet: View {
     let provider: ProviderType
     let onAdd: (Account) -> Void

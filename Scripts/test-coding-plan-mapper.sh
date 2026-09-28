@@ -8,7 +8,7 @@ if [ -z "${DEVELOPER_DIR:-}" ] && [ -d "$DEFAULT_DEV_DIR" ]; then
 fi
 # GLM / Kimi Coding Plan mapper 行为测试：窗口分类、字符串数字解码、
 # 微秒 ISO8601 解析、回退链（limits → 顶层 usage → booster_wallet）、百分比钳制。
-# fixture 来自 2026-09-23 端点实测响应（脱敏），见 docs/glm-kimi-provider-plan.md 第四节。
+# fixture 来自 2026-09-23 端点实测响应（脱敏）。
 swiftc -swift-version 5 \
     AgentRing/Models/GlmUsageData.swift \
     AgentRing/Models/KimiUsageData.swift \
